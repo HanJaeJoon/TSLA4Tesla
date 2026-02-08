@@ -18,4 +18,3 @@ web-build/
 
 expo-env.d.ts
 # @end expo-cli
-assets/encryption_public_key.pem

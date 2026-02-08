@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "TSLA4Telsa",
-    "slug": "TSLA4Telsa",
-    "version": "1.0.0",
+    "name": "TSLA4Tesla",
+    "slug": "TSLA4Tesla",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
@@ -16,11 +16,12 @@
       "supportsTablet": true
     },
     "android": {
+      "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#000000"
       },
-      "package": "com.hanjaejoon.TSLA4Telsa"
+      "package": "com.hanjaejoon.TSLA4Tesla"
     },
     "web": {
       "bundler": "metro",
@@ -38,7 +39,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "89a65e12-2497-454e-b6d0-6636fb289487"
+        "projectId": "61f04ed7-fdca-4b7a-85a0-0959683ab1d2"
       }
     }
   }
