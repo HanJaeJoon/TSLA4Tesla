@@ -8,9 +8,13 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
+import { LineChart } from 'react-native-chart-kit';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
 
 // 2026년 2월 8일 기준 fallback 가격
 const FALLBACK_STOCK_PRICE = 411.78;
@@ -56,6 +60,11 @@ export default function HomeScreen() {
     selectedModel: string;
   } | null>(null);
   const [error, setError] = useState('');
+  const [historyData, setHistoryData] = useState<{
+    labels: string[];
+    values: number[];
+  } | null>(null);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
   // 실시간 주가 가져오기 함수
   const fetchStockPrice = async () => {
@@ -97,6 +106,41 @@ export default function HomeScreen() {
     setSelectedTrimPrice(TESLA_VEHICLES[selectedVehicle][0].value);
   }, [selectedVehicle]);
 
+  const fetchPriceHistory = async (stockCountNumber: number, vehiclePrice: number) => {
+    setIsLoadingHistory(true);
+    setHistoryData(null);
+    try {
+      const response = await fetch(
+        'https://query1.finance.yahoo.com/v8/finance/chart/TSLA?interval=1mo&range=1y'
+      );
+      const data = await response.json();
+
+      const result = data?.chart?.result?.[0];
+      if (!result) throw new Error('데이터 없음');
+
+      const timestamps: number[] = result.timestamps ?? result.timestamp ?? [];
+      const closes: number[] = result.indicators?.quote?.[0]?.close ?? [];
+
+      const paired = timestamps
+        .map((ts: number, i: number) => ({ ts, close: closes[i] }))
+        .filter((d: { ts: number; close: number }) => d.close != null);
+
+      const labels = paired.map(({ ts }: { ts: number }) => {
+        const d = new Date(ts * 1000);
+        return `${d.getMonth() + 1}월`;
+      });
+      const values = paired.map(({ close }: { close: number }) =>
+        (stockCountNumber * close) / vehiclePrice
+      );
+
+      setHistoryData({ labels, values });
+    } catch {
+      // 히스토리 조회 실패 시 조용히 무시 (메인 계산 결과는 표시)
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
   const calculateCars = () => {
     setError('');
     const stockCountNumber = Number.parseFloat(stockCount);
@@ -123,6 +167,8 @@ export default function HomeScreen() {
       totalValue,
       selectedModel,
     });
+
+    fetchPriceHistory(stockCountNumber, selectedTrimPrice);
   };
 
   const formatCurrency = (amount: number) => {
@@ -236,6 +282,56 @@ export default function HomeScreen() {
               <Text style={styles.mainResultValue}>
                 {result.numberOfCars.toFixed(2)} 대
               </Text>
+            </View>
+
+            <View style={styles.chartContainer}>
+              <Text style={styles.chartTitle}>📈 1년간 구매 가능 대수 추이</Text>
+              <Text style={styles.chartSubtitle}>{result.selectedModel} 기준</Text>
+              {isLoadingHistory && (
+                <View style={styles.chartLoading}>
+                  <ActivityIndicator size="small" color="#E82127" />
+                  <Text style={styles.chartLoadingText}>히스토리 불러오는 중...</Text>
+                </View>
+              )}
+              {!isLoadingHistory && historyData && historyData.values.length > 1 && (
+                <>
+                  <LineChart
+                    data={{
+                      labels: historyData.labels,
+                      datasets: [{ data: historyData.values }],
+                    }}
+                    width={SCREEN_WIDTH - 64}
+                    height={220}
+                    yAxisSuffix="대"
+                    yAxisInterval={1}
+                    chartConfig={{
+                      backgroundColor: '#fff',
+                      backgroundGradientFrom: '#fff',
+                      backgroundGradientTo: '#fff',
+                      decimalPlaces: 1,
+                      color: (opacity = 1) => `rgba(232, 33, 39, ${opacity})`,
+                      labelColor: () => '#666',
+                      propsForDots: {
+                        r: '4',
+                        strokeWidth: '2',
+                        stroke: '#E82127',
+                      },
+                      propsForBackgroundLines: {
+                        stroke: '#f0f0f0',
+                      },
+                    }}
+                    bezier
+                    style={styles.chart}
+                  />
+                  <View style={styles.chartLegend}>
+                    <View style={styles.legendDot} />
+                    <Text style={styles.legendText}>월별 구매 가능 대수 (주가 기준)</Text>
+                  </View>
+                </>
+              )}
+              {!isLoadingHistory && !historyData && (
+                <Text style={styles.chartErrorText}>히스토리 데이터를 불러올 수 없습니다</Text>
+              )}
             </View>
           </View>
         )}
@@ -406,5 +502,64 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     color: '#fff',
+  },
+  chartContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    marginTop: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  chartTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 4,
+  },
+  chartSubtitle: {
+    fontSize: 12,
+    color: '#999',
+    marginBottom: 16,
+  },
+  chart: {
+    borderRadius: 8,
+    marginLeft: -16,
+  },
+  chartLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    gap: 8,
+  },
+  chartLoadingText: {
+    fontSize: 14,
+    color: '#999',
+  },
+  chartErrorText: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    paddingVertical: 30,
+  },
+  chartLegend: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    gap: 6,
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#E82127',
+  },
+  legendText: {
+    fontSize: 12,
+    color: '#666',
   },
 });
