@@ -60,6 +60,10 @@
   },
   "private": true,
   "overrides": {
-    "@tootallnate/once": "^3.0.1"
+    "@tootallnate/once": "^3.0.1",
+    "postcss": ">=8.5.23 <9",
+    "xcode": {
+      "uuid": "^11.1.1"
+    }
   }
 }
