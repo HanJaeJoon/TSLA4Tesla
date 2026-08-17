@@ -33,12 +33,17 @@ async function main() {
   const price = quote.meta?.regularMarketPrice;
   if (!price) throw new Error('TSLA price missing');
 
-  let usdKrw = null;
-  try {
-    const fx = await fetchChart('KRW=X', '1d', '1d');
-    usdKrw = fx.meta?.regularMarketPrice ?? null;
-  } catch (e) {
-    console.warn(`KRW=X 조회 실패, usdKrw는 null로 저장: ${e.message}`);
+  // 지원 언어권에서 흔한 통화들의 오프라인 fallback 환율 (USD -> 통화)
+  const SNAPSHOT_CURRENCIES = ['KRW', 'JPY', 'EUR', 'CNY', 'TWD', 'HKD', 'MXN'];
+  const usdRates = {};
+  for (const currency of SNAPSHOT_CURRENCIES) {
+    try {
+      const fx = await fetchChart(`${currency}=X`, '1d', '1d');
+      const rate = fx.meta?.regularMarketPrice;
+      if (rate) usdRates[currency] = rate;
+    } catch (e) {
+      console.warn(`${currency}=X 조회 실패, 스냅샷에서 제외: ${e.message}`);
+    }
   }
 
   const history = {};
@@ -54,14 +59,16 @@ async function main() {
   const snapshot = {
     updatedAt: new Date().toISOString().split('T')[0],
     price,
-    usdKrw,
+    usdRates,
     history,
   };
 
   const outPath = path.join(__dirname, '..', 'assets', 'data', 'market-snapshot.json');
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, JSON.stringify(snapshot));
-  console.log(`saved ${outPath} (price=${price}, usdKrw=${usdKrw}, ${snapshot.updatedAt})`);
+  console.log(
+    `saved ${outPath} (price=${price}, rates=${Object.keys(usdRates).join(',')}, ${snapshot.updatedAt})`
+  );
 }
 
 main().catch((e) => {

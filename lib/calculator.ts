@@ -1,15 +1,18 @@
+// 에러 문구는 UI 레이어에서 코드 기반으로 번역한다 (lib은 i18n 비의존)
+export type StockCountError = 'empty' | 'invalid';
+
 export type ParseResult =
   | { ok: true; value: number }
-  | { ok: false; error: string };
+  | { ok: false; error: StockCountError };
 
 export function parseStockCount(input: string): ParseResult {
   if (!input.trim()) {
-    return { ok: false, error: '주식 수를 입력해주세요' };
+    return { ok: false, error: 'empty' };
   }
 
   const value = Number.parseFloat(input);
   if (Number.isNaN(value) || value <= 0) {
-    return { ok: false, error: '유효한 주식 수를 입력해주세요 (양수)' };
+    return { ok: false, error: 'invalid' };
   }
 
   return { ok: true, value };
@@ -24,14 +27,12 @@ export function calculatePurchase(
   return { totalValue, numberOfCars: totalValue / vehiclePrice };
 }
 
-const monthLabel = (d: Date) => `${d.getMonth() + 1}월`;
-
 export function buildHistorySeries(
   timestamps: number[],
   closes: (number | null)[],
   stockCount: number,
   vehiclePrice: number,
-  formatLabel: (d: Date) => string = monthLabel
+  formatLabel: (d: Date) => string
 ): { labels: string[]; values: number[] } {
   const paired = timestamps
     .map((ts, i) => ({ ts, close: closes[i] }))
@@ -70,22 +71,35 @@ export function formatKrwApprox(usd: number, usdKrwRate: number): string {
 
 export type ChartPeriod = '1M' | '6M' | '1Y' | '5Y';
 
+// 라벨 종류만 정의하고 실제 형식은 locale에 따라 Intl로 만든다
 const PERIOD_CONFIGS: Record<
   ChartPeriod,
-  { range: string; interval: string; formatLabel: (d: Date) => string }
+  { range: string; interval: string; labelKind: 'day' | 'month' | 'yearMonth' }
 > = {
-  '1M': { range: '1mo', interval: '1d', formatLabel: (d) => `${d.getDate()}일` },
-  '6M': { range: '6mo', interval: '1wk', formatLabel: monthLabel },
-  '1Y': { range: '1y', interval: '1mo', formatLabel: monthLabel },
-  '5Y': {
-    range: '5y',
-    interval: '3mo',
-    formatLabel: (d) => `${String(d.getFullYear()).slice(2)}.${d.getMonth() + 1}`,
-  },
+  '1M': { range: '1mo', interval: '1d', labelKind: 'day' },
+  '6M': { range: '6mo', interval: '1wk', labelKind: 'month' },
+  '1Y': { range: '1y', interval: '1mo', labelKind: 'month' },
+  '5Y': { range: '5y', interval: '3mo', labelKind: 'yearMonth' },
 };
 
-export function getPeriodConfig(period: ChartPeriod) {
-  return PERIOD_CONFIGS[period];
+function makeLabelFormatter(
+  kind: 'day' | 'month' | 'yearMonth',
+  locale: string
+): (d: Date) => string {
+  if (kind === 'yearMonth') {
+    // 축 라벨 공간이 좁아 locale 무관 숫자 표기(예: 24.8) 사용
+    return (d) => `${String(d.getFullYear()).slice(2)}.${d.getMonth() + 1}`;
+  }
+  const fmt = new Intl.DateTimeFormat(
+    locale,
+    kind === 'day' ? { day: 'numeric' } : { month: 'short' }
+  );
+  return (d) => fmt.format(d);
+}
+
+export function getPeriodConfig(period: ChartPeriod, locale: string) {
+  const { range, interval, labelKind } = PERIOD_CONFIGS[period];
+  return { range, interval, formatLabel: makeLabelFormatter(labelKind, locale) };
 }
 
 export function decimateLabels(labels: string[], maxCount: number): string[] {
@@ -94,8 +108,8 @@ export function decimateLabels(labels: string[], maxCount: number): string[] {
   return labels.map((label, i) => (i % step === 0 ? label : ''));
 }
 
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('ko-KR', {
+export function formatCurrency(amount: number, locale: string): string {
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2,

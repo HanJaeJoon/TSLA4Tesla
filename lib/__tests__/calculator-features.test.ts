@@ -53,32 +53,38 @@ describe('formatKrwApprox', () => {
 });
 
 describe('getPeriodConfig', () => {
-  it('1M은 1일 간격, 일 단위 라벨을 쓴다', () => {
-    const config = getPeriodConfig('1M');
+  it('1M은 1일 간격, locale별 일 단위 라벨을 쓴다', () => {
+    const config = getPeriodConfig('1M', 'ko');
     expect(config.range).toBe('1mo');
     expect(config.interval).toBe('1d');
     expect(config.formatLabel(new Date(2026, 7, 17))).toBe('17일');
+    expect(getPeriodConfig('1M', 'en').formatLabel(new Date(2026, 7, 17))).toBe('17');
+    expect(getPeriodConfig('1M', 'ja').formatLabel(new Date(2026, 7, 17))).toBe('17日');
   });
 
-  it('6M은 1주 간격, 월 단위 라벨을 쓴다', () => {
-    const config = getPeriodConfig('6M');
+  it('6M은 1주 간격, locale별 월 단위 라벨을 쓴다', () => {
+    const config = getPeriodConfig('6M', 'ko');
     expect(config.range).toBe('6mo');
     expect(config.interval).toBe('1wk');
     expect(config.formatLabel(new Date(2026, 7, 17))).toBe('8월');
+    expect(getPeriodConfig('6M', 'en').formatLabel(new Date(2026, 7, 17))).toBe('Aug');
   });
 
-  it('1Y는 1개월 간격, 월 단위 라벨을 쓴다', () => {
-    const config = getPeriodConfig('1Y');
+  it('1Y는 1개월 간격, locale별 월 단위 라벨을 쓴다', () => {
+    const config = getPeriodConfig('1Y', 'ko');
     expect(config.range).toBe('1y');
     expect(config.interval).toBe('1mo');
     expect(config.formatLabel(new Date(2026, 0, 15))).toBe('1월');
+    expect(getPeriodConfig('1Y', 'en').formatLabel(new Date(2026, 0, 15))).toBe('Jan');
+    expect(getPeriodConfig('1Y', 'zh').formatLabel(new Date(2026, 0, 15))).toBe('1月');
   });
 
-  it('5Y는 3개월 간격, 연.월 라벨을 쓴다', () => {
-    const config = getPeriodConfig('5Y');
+  it('5Y는 3개월 간격, locale 무관 연.월 숫자 라벨을 쓴다', () => {
+    const config = getPeriodConfig('5Y', 'ko');
     expect(config.range).toBe('5y');
     expect(config.interval).toBe('3mo');
     expect(config.formatLabel(new Date(2024, 7, 1))).toBe('24.8');
+    expect(getPeriodConfig('5Y', 'en').formatLabel(new Date(2024, 7, 1))).toBe('24.8');
   });
 });
 

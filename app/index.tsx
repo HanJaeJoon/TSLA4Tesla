@@ -23,18 +23,23 @@ import {
   buildHistorySeries,
   formatCurrency,
   shortfallToNextCar,
-  formatKrwApprox,
   getPeriodConfig,
   decimateLabels,
   ChartPeriod,
+  StockCountError,
 } from '../lib/calculator';
+import { resolveTargetCurrency, formatApproxConverted } from '../lib/currency';
+import { t, appLocale, deviceCurrencyCode } from '../lib/i18n';
 import { saveInputs, loadInputs } from '../lib/preferences';
 import AdBanner from '../components/AdBanner';
-import { getSnapshotSeries, MarketSnapshot } from '../lib/snapshot';
+import { getSnapshotSeries, getSnapshotRate, MarketSnapshot } from '../lib/snapshot';
 import marketSnapshotJson from '../assets/data/market-snapshot.json';
 
 // 릴리스 시점에 scripts/update-market-snapshot.js로 갱신되는 오프라인 fallback 데이터
 const SNAPSHOT = marketSnapshotJson as MarketSnapshot;
+
+// 기기 지역 통화 기준 환산 표시 대상 (USD 지역이거나 통화를 모르면 null -> 환산 숨김)
+const TARGET_CURRENCY = resolveTargetCurrency(deviceCurrencyCode);
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -139,7 +144,9 @@ export default function HomeScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [priceStatus, setPriceStatus] = useState<PriceStatus>('loading');
   const [lastUpdated, setLastUpdated] = useState<string>(SNAPSHOT.updatedAt);
-  const [usdKrw, setUsdKrw] = useState<number | null>(SNAPSHOT.usdKrw);
+  const [usdRate, setUsdRate] = useState<number | null>(
+    TARGET_CURRENCY ? getSnapshotRate(SNAPSHOT, TARGET_CURRENCY) : null
+  );
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>('1Y');
   const [hydrated, setHydrated] = useState(false);
   const [result, setResult] = useState<{
@@ -150,7 +157,7 @@ export default function HomeScreen() {
     vehiclePrice: number;
     shortfall: { targetCars: number; neededValue: number; neededShares: number };
   } | null>(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<StockCountError | ''>('');
   const [historyData, setHistoryData] = useState<{
     labels: string[];
     values: number[];
@@ -181,11 +188,9 @@ export default function HomeScreen() {
       // 아니면 번들 스냅샷 데이터를 사용 중임을 표시
       setPriceStatus((prev) => (prev === 'live' || prev === 'stale' ? 'stale' : 'snapshot'));
       if (alertOnError) {
-        Alert.alert(
-          '주가 업데이트 실패',
-          '실시간 주가를 가져오지 못했습니다. 저장된 가격을 사용합니다.',
-          [{ text: '확인' }]
-        );
+        Alert.alert(t('alertPriceFailTitle'), t('alertPriceFailBody'), [
+          { text: t('alertOk') },
+        ]);
       }
       console.error('Stock price fetch error:', err);
     } finally {
@@ -194,14 +199,15 @@ export default function HomeScreen() {
     }
   }, []);
 
-  // USD/KRW 환율 조회 (실패 시 스냅샷 환율 유지)
+  // USD -> 기기 지역 통화 환율 조회 (실패 시 스냅샷 환율 유지, 대상 통화 없으면 조회 안 함)
   const fetchExchangeRate = useCallback(async () => {
+    if (!TARGET_CURRENCY) return;
     try {
       const data = await fetchJsonWithTimeout(
-        'https://query1.finance.yahoo.com/v8/finance/chart/KRW=X?interval=1d&range=1d'
+        `https://query1.finance.yahoo.com/v8/finance/chart/${TARGET_CURRENCY}=X?interval=1d&range=1d`
       );
       const rate = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
-      if (rate) setUsdKrw(rate);
+      if (rate) setUsdRate(rate);
     } catch {
       // 환율 없이도 앱은 동작
     }
@@ -274,7 +280,7 @@ export default function HomeScreen() {
     };
 
     try {
-      const { range, interval, formatLabel } = getPeriodConfig(period);
+      const { range, interval, formatLabel } = getPeriodConfig(period, appLocale);
 
       let raw = historyCache.current.get(period);
       if (!raw) {
@@ -295,7 +301,13 @@ export default function HomeScreen() {
       );
     } catch {
       // 조회 실패 시 번들 스냅샷 데이터로 대체 (그래도 없으면 안내 문구 표시)
-      const fallback = getSnapshotSeries(SNAPSHOT, period, stockCountNumber, vehiclePrice);
+      const fallback = getSnapshotSeries(
+        SNAPSHOT,
+        period,
+        stockCountNumber,
+        vehiclePrice,
+        appLocale
+      );
       if (fallback) applySeries(fallback);
     } finally {
       if (requestId === historyRequestId.current) {
@@ -358,24 +370,24 @@ export default function HomeScreen() {
       >
         <View style={styles.header}>
           <Text style={styles.title}>TSLA4Tesla</Text>
-          <Text style={styles.subtitle}>Tesla 주식으로 차량 구매 계산기</Text>
+          <Text style={styles.subtitle}>{t('subtitle')}</Text>
         </View>
 
         <View style={styles.priceInfoContainer}>
           <View style={styles.priceInfoRow}>
             <View>
               <Text style={styles.priceInfoText}>
-                현재 TSLA 주가: {formatCurrency(stockPrice)}
+                {t('currentPrice', { price: formatCurrency(stockPrice, appLocale) })}
               </Text>
               <Text style={styles.priceInfoSubtext}>
-                {lastUpdated} 기준
+                {t('asOf', { time: lastUpdated })}
               </Text>
             </View>
             <TouchableOpacity
               style={styles.refreshButton}
               onPress={() => fetchStockPrice(true)}
               disabled={isLoadingPrice}
-              accessibilityLabel="주가 새로고침"
+              accessibilityLabel={t('refreshA11y')}
             >
               {isLoadingPrice ? (
                 <ActivityIndicator size="small" color={BRAND_RED} />
@@ -389,19 +401,19 @@ export default function HomeScreen() {
               <Ionicons name="information-circle-outline" size={16} color={BRAND_RED} />
               <Text style={styles.fallbackBannerText}>
                 {priceStatus === 'snapshot'
-                  ? `실시간 조회 실패 - ${SNAPSHOT.updatedAt} 기준 저장 데이터 사용 중`
-                  : `실시간 조회 실패 - 마지막 업데이트(${lastUpdated}) 가격 표시 중`}
+                  ? t('fallbackSnapshot', { time: SNAPSHOT.updatedAt })
+                  : t('fallbackStale', { time: lastUpdated })}
               </Text>
             </View>
           )}
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>보유한 Tesla 주식 수</Text>
+          <Text style={styles.label}>{t('stockCountLabel')}</Text>
           <TextInput
             style={[styles.input, error ? styles.inputError : null]}
             keyboardType="numeric"
-            placeholder="예: 100"
+            placeholder={t('stockCountPlaceholder')}
             placeholderTextColor={colors.faint}
             value={stockCount}
             onChangeText={(text) => {
@@ -409,11 +421,11 @@ export default function HomeScreen() {
               setError('');
             }}
           />
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          {error ? <Text style={styles.errorText}>{t(`errors.${error}`)}</Text> : null}
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>차량 모델 선택</Text>
+          <Text style={styles.label}>{t('vehicleModelLabel')}</Text>
           <View style={styles.pickerContainer}>
             <Picker
               selectedValue={selectedVehicle}
@@ -431,7 +443,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>트림 선택</Text>
+          <Text style={styles.label}>{t('trimLabel')}</Text>
           <View style={styles.pickerContainer}>
             <Picker
               selectedValue={selectedTrimPrice}
@@ -442,7 +454,7 @@ export default function HomeScreen() {
               {TESLA_VEHICLES[selectedVehicle].map((variant) => (
                 <Picker.Item
                   key={variant.value}
-                  label={`${variant.label} - ${formatCurrency(variant.value)}`}
+                  label={`${variant.label} - ${formatCurrency(variant.value, appLocale)}`}
                   value={variant.value}
                 />
               ))}
@@ -451,49 +463,63 @@ export default function HomeScreen() {
         </View>
 
         <TouchableOpacity style={styles.calculateButton} onPress={calculateCars}>
-          <Text style={styles.calculateButtonText}>계산하기</Text>
+          <Text style={styles.calculateButtonText}>{t('calculate')}</Text>
         </TouchableOpacity>
 
         {result && (
           <View style={styles.resultContainer}>
-            <Text style={styles.resultTitle}>계산 결과</Text>
+            <Text style={styles.resultTitle}>{t('resultTitle')}</Text>
             <View style={styles.resultCard}>
-              <Text style={styles.resultLabel}>주식 총 가치</Text>
-              <Text style={styles.resultValue}>{formatCurrency(result.totalValue)}</Text>
-              {usdKrw != null && (
+              <Text style={styles.resultLabel}>{t('totalValueLabel')}</Text>
+              <Text style={styles.resultValue}>
+                {formatCurrency(result.totalValue, appLocale)}
+              </Text>
+              {TARGET_CURRENCY && usdRate != null && (
                 <Text style={styles.resultSubValue}>
-                  {formatKrwApprox(result.totalValue, usdKrw)}
+                  {formatApproxConverted(result.totalValue, usdRate, TARGET_CURRENCY, appLocale)}
                 </Text>
               )}
             </View>
             <View style={styles.resultCard}>
-              <Text style={styles.resultLabel}>선택한 모델</Text>
+              <Text style={styles.resultLabel}>{t('selectedModelLabel')}</Text>
               <Text style={styles.resultValue}>{result.selectedModel}</Text>
             </View>
             <View style={[styles.resultCard, styles.mainResultCard]}>
-              <Text style={[styles.resultLabel, styles.mainResultLabel]}>구매 가능 대수</Text>
+              <Text style={[styles.resultLabel, styles.mainResultLabel]}>
+                {t('carsCountLabel')}
+              </Text>
               <Text style={styles.mainResultValue}>
-                {result.numberOfCars.toFixed(2)} 대
+                {t('carsCount', { n: result.numberOfCars.toFixed(2) })}
               </Text>
             </View>
 
             <View style={styles.resultCard}>
               <Text style={styles.resultLabel}>
-                다음 목표: {result.shortfall.targetCars}대까지
+                {t('nextTargetLabel', { n: result.shortfall.targetCars })}
               </Text>
               <Text style={styles.resultValue}>
-                {result.shortfall.neededShares.toFixed(1)}주 부족 ({formatCurrency(result.shortfall.neededValue)})
+                {t('shortfall', {
+                  shares: result.shortfall.neededShares.toFixed(1),
+                  value: formatCurrency(result.shortfall.neededValue, appLocale),
+                })}
               </Text>
-              {usdKrw != null && (
+              {TARGET_CURRENCY && usdRate != null && (
                 <Text style={styles.resultSubValue}>
-                  {formatKrwApprox(result.shortfall.neededValue, usdKrw)}
+                  {formatApproxConverted(
+                    result.shortfall.neededValue,
+                    usdRate,
+                    TARGET_CURRENCY,
+                    appLocale
+                  )}
                 </Text>
               )}
             </View>
 
             <View style={styles.chartContainer}>
-              <Text style={styles.chartTitle}>구매 가능 대수 추이</Text>
-              <Text style={styles.chartSubtitle}>{result.selectedModel} 기준</Text>
+              <Text style={styles.chartTitle}>{t('chartTitle')}</Text>
+              <Text style={styles.chartSubtitle}>
+                {t('chartSubtitle', { model: result.selectedModel })}
+              </Text>
               <View style={styles.periodTabs}>
                 {CHART_PERIODS.map((period) => (
                   <TouchableOpacity
@@ -518,7 +544,7 @@ export default function HomeScreen() {
               {isLoadingHistory && (
                 <View style={styles.chartLoading}>
                   <ActivityIndicator size="small" color={BRAND_RED} />
-                  <Text style={styles.chartLoadingText}>히스토리 불러오는 중...</Text>
+                  <Text style={styles.chartLoadingText}>{t('chartLoading')}</Text>
                 </View>
               )}
               {!isLoadingHistory && historyData && historyData.values.length > 1 && (
@@ -530,7 +556,7 @@ export default function HomeScreen() {
                     }}
                     width={SCREEN_WIDTH - 80}
                     height={220}
-                    yAxisSuffix="대"
+                    yAxisSuffix={t('chartYAxisSuffix')}
                     yAxisInterval={1}
                     chartConfig={{
                       backgroundColor: colors.card,
@@ -553,12 +579,12 @@ export default function HomeScreen() {
                   />
                   <View style={styles.chartLegend}>
                     <View style={styles.legendDot} />
-                    <Text style={styles.legendText}>월별 구매 가능 대수 (주가 기준)</Text>
+                    <Text style={styles.legendText}>{t('chartLegend')}</Text>
                   </View>
                 </>
               )}
               {!isLoadingHistory && !historyData && (
-                <Text style={styles.chartErrorText}>히스토리 데이터를 불러올 수 없습니다</Text>
+                <Text style={styles.chartErrorText}>{t('chartError')}</Text>
               )}
             </View>
           </View>
