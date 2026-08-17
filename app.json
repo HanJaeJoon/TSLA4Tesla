@@ -19,7 +19,7 @@
       "versionCode": 4,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#000000"
+        "backgroundColor": "#E82127"
       },
       "package": "com.hanjaejoon.TSLA4Tesla"
     },
@@ -33,9 +33,6 @@
     ],
     "experiments": {
       "typedRoutes": true
-    },
-    "cli": {
-      "appVersionSource": "local"
     },
     "extra": {
       "router": {
