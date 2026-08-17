@@ -681,6 +681,7 @@ const makeStyles = (colors: (typeof PALETTES)['light']) =>
     picker: {
       height: 56,
       color: colors.text,
+      backgroundColor: 'transparent',
     },
     calculateButton: {
       backgroundColor: BRAND_RED,
