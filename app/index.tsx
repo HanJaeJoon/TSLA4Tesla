@@ -29,6 +29,7 @@ import {
   ChartPeriod,
 } from '../lib/calculator';
 import { saveInputs, loadInputs } from '../lib/preferences';
+import AdBanner from '../components/AdBanner';
 import { getSnapshotSeries, MarketSnapshot } from '../lib/snapshot';
 import marketSnapshotJson from '../assets/data/market-snapshot.json';
 
@@ -344,6 +345,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="auto" />
       <ScrollView
+        style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl
@@ -562,6 +564,7 @@ export default function HomeScreen() {
           </View>
         )}
       </ScrollView>
+      <AdBanner />
     </SafeAreaView>
   );
 }
@@ -571,6 +574,9 @@ const makeStyles = (colors: (typeof PALETTES)['light']) =>
     container: {
       flex: 1,
       backgroundColor: colors.background,
+    },
+    scroll: {
+      flex: 1,
     },
     scrollContent: {
       padding: 20,
