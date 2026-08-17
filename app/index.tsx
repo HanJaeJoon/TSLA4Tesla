@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Platform,
   RefreshControl,
   useColorScheme,
 } from 'react-native';
@@ -31,7 +32,11 @@ import {
 import { resolveTargetCurrency, formatApproxConverted } from '../lib/currency';
 import { t, appLocale, deviceCurrencyCode } from '../lib/i18n';
 import { saveInputs, loadInputs } from '../lib/preferences';
+import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
+import * as MediaLibrary from 'expo-media-library';
 import AdBanner from '../components/AdBanner';
+import ShareCard from '../components/ShareCard';
 import { getSnapshotSeries, getSnapshotRate, MarketSnapshot } from '../lib/snapshot';
 import marketSnapshotJson from '../assets/data/market-snapshot.json';
 
@@ -153,6 +158,7 @@ export default function HomeScreen() {
     numberOfCars: number;
     totalValue: number;
     selectedModel: string;
+    vehicle: keyof typeof TESLA_VEHICLES;
     stockCountNum: number;
     vehiclePrice: number;
     shortfall: { targetCars: number; neededValue: number; neededShares: number };
@@ -345,12 +351,64 @@ export default function HomeScreen() {
       numberOfCars,
       totalValue,
       selectedModel: `${selectedVehicle} ${selectedTrim}`,
+      vehicle: selectedVehicle,
       stockCountNum: parsed.value,
       vehiclePrice: selectedTrimPrice,
       shortfall: shortfallToNextCar(parsed.value, stockPrice, selectedTrimPrice),
     });
 
     fetchPriceHistory(parsed.value, selectedTrimPrice, chartPeriod);
+  };
+
+  // 공유 시트를 지원하는 환경에서만 공유 버튼 노출
+  const shareCardRef = useRef<View>(null);
+  const [canShare, setCanShare] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  useEffect(() => {
+    Sharing.isAvailableAsync()
+      .then(setCanShare)
+      .catch(() => setCanShare(false));
+  }, []);
+
+  const captureShareCard = async () => {
+    const uri = await captureRef(shareCardRef, { format: 'png', quality: 1 });
+    return uri.startsWith('file') ? uri : `file://${uri}`;
+  };
+
+  const shareResultCard = async () => {
+    if (isSharing) return;
+    setIsSharing(true);
+    try {
+      const uri = await captureShareCard();
+      await Sharing.shareAsync(uri, { mimeType: 'image/png' });
+    } catch {
+      Alert.alert(t('shareFailTitle'), t('shareFailBody'), [{ text: t('alertOk') }]);
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  // 갤러리 저장 (web은 MediaLibrary 미지원이라 버튼 숨김)
+  const canSave = Platform.OS !== 'web';
+  const [isSaving, setIsSaving] = useState(false);
+
+  const saveResultCard = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const { granted } = await MediaLibrary.requestPermissionsAsync(true);
+      if (!granted) {
+        Alert.alert(t('saveFailTitle'), t('savePermission'), [{ text: t('alertOk') }]);
+        return;
+      }
+      const uri = await captureShareCard();
+      await MediaLibrary.saveToLibraryAsync(uri);
+      Alert.alert(t('saveDoneTitle'), t('saveDoneBody'), [{ text: t('alertOk') }]);
+    } catch {
+      Alert.alert(t('saveFailTitle'), t('saveFailBody'), [{ text: t('alertOk') }]);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -468,7 +526,39 @@ export default function HomeScreen() {
 
         {result && (
           <View style={styles.resultContainer}>
-            <Text style={styles.resultTitle}>{t('resultTitle')}</Text>
+            <View style={styles.resultTitleRow}>
+              <Text style={styles.resultTitle}>{t('resultTitle')}</Text>
+              <View style={styles.titleActions}>
+                {canSave && (
+                  <TouchableOpacity
+                    style={styles.shareButton}
+                    onPress={saveResultCard}
+                    disabled={isSaving}
+                    accessibilityLabel={t('saveA11y')}
+                  >
+                    {isSaving ? (
+                      <ActivityIndicator size="small" color={BRAND_RED} />
+                    ) : (
+                      <Ionicons name="download-outline" size={20} color={BRAND_RED} />
+                    )}
+                  </TouchableOpacity>
+                )}
+                {canShare && (
+                  <TouchableOpacity
+                    style={styles.shareButton}
+                    onPress={shareResultCard}
+                    disabled={isSharing}
+                    accessibilityLabel={t('shareA11y')}
+                  >
+                    {isSharing ? (
+                      <ActivityIndicator size="small" color={BRAND_RED} />
+                    ) : (
+                      <Ionicons name="share-social-outline" size={20} color={BRAND_RED} />
+                    )}
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
             <View style={styles.resultCard}>
               <Text style={styles.resultLabel}>{t('totalValueLabel')}</Text>
               <Text style={styles.resultValue}>
@@ -590,6 +680,24 @@ export default function HomeScreen() {
           </View>
         )}
       </ScrollView>
+      {result && (
+        <View style={styles.shareCardOffscreen} pointerEvents="none">
+          <ShareCard
+            ref={shareCardRef}
+            headline={t('shareHeadline', { n: result.stockCountNum })}
+            carsText={t('carsCount', { n: result.numberOfCars.toFixed(2) })}
+            model={result.selectedModel}
+            vehicle={result.vehicle}
+            totalValueLabel={t('totalValueLabel')}
+            totalValueText={formatCurrency(result.totalValue, appLocale)}
+            shortfallText={t('shortfall', {
+              shares: result.shortfall.neededShares.toFixed(1),
+              value: formatCurrency(result.shortfall.neededValue, appLocale),
+            })}
+            asOfText={t('asOf', { time: lastUpdated })}
+          />
+        </View>
+      )}
       <AdBanner />
     </SafeAreaView>
   );
@@ -735,12 +843,38 @@ const makeStyles = (colors: (typeof PALETTES)['light']) =>
     resultContainer: {
       marginTop: 30,
     },
+    resultTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 16,
+    },
     resultTitle: {
       fontSize: 24,
       fontWeight: 'bold',
       color: colors.text,
-      marginBottom: 16,
       textAlign: 'center',
+    },
+    titleActions: {
+      position: 'absolute',
+      right: 0,
+      flexDirection: 'row',
+      gap: 8,
+    },
+    shareButton: {
+      backgroundColor: colors.buttonBg,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    shareCardOffscreen: {
+      position: 'absolute',
+      top: 0,
+      left: -9999,
     },
     resultCard: {
       backgroundColor: colors.card,
