@@ -7,7 +7,7 @@ const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreCl
 
 // AdMob 콘솔에서 실제 배너 광고 단위 ID(ca-app-pub-XXXX/YYYY)를 발급받으면 여기에 입력.
 // 비어 있으면 구글 공식 테스트 광고가 표시된다 (실수로 실광고를 테스트하는 사고 방지).
-const PRODUCTION_BANNER_AD_UNIT_ID = '';
+const PRODUCTION_BANNER_AD_UNIT_ID = 'ca-app-pub-2903995158289675/6341864832';
 
 export default function AdBanner() {
   if (isExpoGo) {
