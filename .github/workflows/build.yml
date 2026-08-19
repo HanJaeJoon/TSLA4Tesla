@@ -11,6 +11,12 @@ on:
       - 'docs/**'
       - '**/*.md'
 
+env:
+  # Play Console > Google Play로 보호됨 > 앱 서명 > 업로드 키 인증서의 SHA-256.
+  # 인증서 지문은 공개 정보이므로 저장소에 두어도 안전하다. 비밀은 키스토어와 비밀번호뿐이다.
+  EXPECTED_UPLOAD_CERT_SHA256: A2:AA:AB:6A:63:E5:06:BF:E4:47:99:B3:28:F0:30:87:CC:1B:28:DF:BF:9D:B4:30:83:10:91:41:11:01:4B:2D
+  AAB_PATH: android/app/build/outputs/bundle/release/app-release.aab
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -43,12 +49,44 @@ jobs:
       - name: Expo prebuild
         run: npx expo prebuild --platform android --clean
 
+      - name: Restore keystore
+        run: echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+
       - name: Build AAB
         working-directory: android
-        run: ./gradlew :app:bundleRelease --no-daemon
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          ./gradlew :app:bundleRelease --no-daemon \
+            -Pandroid.injected.signing.store.file="$RUNNER_TEMP/upload.jks" \
+            -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$ANDROID_KEY_PASSWORD"
 
-      - name: Show signing certificate
-        run: keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release.aab
+      - name: Verify signing certificate
+        run: |
+          ACTUAL=$(keytool -printcert -jarfile "$AAB_PATH" \
+            | grep -m1 'SHA256:' | sed 's/.*SHA256://' | tr -d ' \t\r')
+          EXPECTED=$(echo "$EXPECTED_UPLOAD_CERT_SHA256" | tr -d ' \t\r')
+          echo "기대값: $EXPECTED"
+          echo "실제값: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "::error::AAB에서 서명 인증서를 읽지 못했습니다."
+            exit 1
+          fi
+          if [ "$(echo "$ACTUAL" | tr 'a-f' 'A-F')" != "$(echo "$EXPECTED" | tr 'a-f' 'A-F')" ]; then
+            echo "::error::서명 인증서가 Play 업로드 키와 일치하지 않습니다. Play에 업로드하지 마세요."
+            exit 1
+          fi
+          echo "서명 검증 통과 - Play 업로드 키와 일치"
+
+      - name: Remove keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.jks"
 
       - uses: actions/upload-artifact@v4
         with:
