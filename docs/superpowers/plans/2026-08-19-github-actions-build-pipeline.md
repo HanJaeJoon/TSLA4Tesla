@@ -21,7 +21,7 @@
 - AdMob Android 앱 ID: `ca-app-pub-2903995158289675~4308200614`
 - `versionCode`는 `app.json`의 `android.versionCode`에서 **수동 관리**. CI에서 자동 증가시키지 않는다
 - **프로덕션 트랙을 절대 건드리지 않는다.** 이 계획의 업로드 대상은 내부 테스트 트랙뿐이다
-- 저장소는 Private 유지. Actions 무료 한도 월 2,000분은 계정 전체 합산이다
+- 저장소는 **Public**이다 (2026-08-19 확인). Public 저장소는 Actions 분이 무제한이므로 빌드 횟수 제약이 없다. 대신 코드와 워크플로가 공개되므로 시크릿은 반드시 GitHub Secrets로만 다룬다
 - 작업 브랜치: `dev/jjhan-adapp-kit`. main 병합은 squash merge
 - 커밋 메시지는 conventional commit. 사용자 대상 텍스트에 `·` `—` `…` 등 비ASCII 문장부호를 쓰지 않는다
 - `eas.json`은 삭제하지 않는다 (대체 경로로 존치)

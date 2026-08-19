@@ -144,14 +144,21 @@ npx eas-cli credentials    # Android > 키스토어 다운로드
 
 - **versionCode**: `app.json`의 `android.versionCode`에 명시적으로 유지 (`eas.json`이 `appVersionSource: "local"`). CI는 "마지막 출시본보다 큰가"만 검사한다. `github.run_number` 자동 증가는 로컬 빌드와 어긋나 Play가 거부할 수 있어 쓰지 않는다.
 - **Play 업로드 자동화**: 1단계에서는 AAB를 artifact로 받아 수동 업로드. Google Play API 서비스 계정 설정이 선행돼야 하므로, 앱 3개쯤에서 수동 업로드가 실제로 아파질 때 `r0adkll/upload-google-play`로 자동화한다.
-- **저장소 공개 여부**: Private 유지.
+- **저장소 공개 여부**: TSLA4Tesla는 Public이며 그대로 둔다. 신규 앱 저장소는 앱별로 결정한다 (아래 "Actions 무료 한도" 참고).
 - **EAS 존치**: `eas.json`은 남긴다. GitHub Actions 장애 시 대체 경로가 있는 것이 낫고 유지 비용은 파일 하나다.
 
-### Actions 무료 한도 (규모 확대 시 제약)
+### Actions 무료 한도
 
-Private 저장소의 월 2,000분은 **저장소당이 아니라 계정 전체 합산**이다. Android 릴리스 빌드가 약 20분이면 전체 합쳐 월 100회. 앱 10개면 앱당 월 10회로 실사용엔 충분하지만 무한하지 않다.
+**Public 저장소는 Actions 분이 무제한이다.** TSLA4Tesla는 Public이므로(2026-08-19 확인) 이 저장소의 빌드 횟수에는 제약이 없다.
 
-앱 20-30개를 넘어가면 선택지: 스타터만 Public 전환 / Gradle 캐시 최적화로 빌드 시간 단축 / 초과분 종량 결제.
+Private 저장소를 쓸 경우에만 한도가 걸리며, 그 월 2,000분은 **저장소당이 아니라 계정 전체 합산**이다. Android 릴리스 빌드가 약 20분이면 전체 합쳐 월 100회. 앱 10개면 앱당 월 10회다.
+
+따라서 앱별 저장소의 공개 여부가 곧 빌드 예산 결정이다:
+
+- **Public**: 빌드 무제한. 소스가 공개된다
+- **Private**: 계정 합산 월 2,000분 공유. 앱 20-30개를 넘어가면 Gradle 캐시 최적화나 종량 결제가 필요하다
+
+앱마다 선택할 수 있으므로, 공개해도 무방한 앱은 Public으로 두어 한도를 아끼는 절충이 가능하다.
 
 ## 6. 첫 검증 앱: 대출 상환 계산기
 
