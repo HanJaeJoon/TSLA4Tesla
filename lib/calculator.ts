@@ -55,20 +55,6 @@ export function shortfallToNextCar(
   return { targetCars, neededValue, neededShares: neededValue / stockPrice };
 }
 
-export function formatKrwApprox(usd: number, usdKrwRate: number): string {
-  const krw = usd * usdKrwRate;
-  const man = Math.round(krw / 1e4);
-  // 만 단위 반올림 결과가 1억(10,000만)에 도달하면 억 단위로 표기
-  if (krw >= 1e8 || man >= 10000) {
-    const eok = (krw / 1e8).toFixed(1).replace(/\.0$/, '');
-    return `약 ${eok}억 원`;
-  }
-  if (krw >= 1e4) {
-    return `약 ${man.toLocaleString('ko-KR')}만 원`;
-  }
-  return `약 ${Math.round(krw).toLocaleString('ko-KR')}원`;
-}
-
 export type ChartPeriod = '1M' | '6M' | '1Y' | '5Y';
 
 // 라벨 종류만 정의하고 실제 형식은 locale에 따라 Intl로 만든다
@@ -100,18 +86,4 @@ function makeLabelFormatter(
 export function getPeriodConfig(period: ChartPeriod, locale: string) {
   const { range, interval, labelKind } = PERIOD_CONFIGS[period];
   return { range, interval, formatLabel: makeLabelFormatter(labelKind, locale) };
-}
-
-export function decimateLabels(labels: string[], maxCount: number): string[] {
-  if (labels.length <= maxCount) return labels;
-  const step = Math.ceil(labels.length / maxCount);
-  return labels.map((label, i) => (i % step === 0 ? label : ''));
-}
-
-export function formatCurrency(amount: number, locale: string): string {
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-  }).format(amount);
 }

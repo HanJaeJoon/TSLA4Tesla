@@ -48,6 +48,10 @@ jobs:
       - name: Test
         run: npm run test:ci
 
+      # kit -> 앱 방향 의존 금지 규칙이 여기서 강제된다 (eslint.config.js)
+      - name: Lint
+        run: npm run lint
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

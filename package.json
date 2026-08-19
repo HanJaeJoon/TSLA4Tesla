@@ -11,7 +11,7 @@
     "test": "jest --watchAll",
     "test:ci": "jest --ci --watchAll=false",
     "typecheck": "tsc --noEmit",
-    "lint": "expo lint"
+    "lint": "eslint ."
   },
   "jest": {
     "preset": "jest-expo"

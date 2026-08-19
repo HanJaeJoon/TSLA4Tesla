@@ -2,6 +2,7 @@ import React, { forwardRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { silhouetteFor } from '../lib/share-card';
+import { BrandCard } from '../kit/share/BrandCard';
 
 const BRAND_RED = '#E82127';
 const CARD_WIDTH = 360;
@@ -68,12 +69,17 @@ export type ShareCardProps = {
   asOfText: string;
 };
 
-// 공유 이미지 캡처 전용 카드. 화면 밖에 렌더링해 두고 captureRef로 캡처한다.
-// 다크모드와 무관하게 항상 브랜드 색 고정.
+// 카드 골격(브랜드 색 배경, 앱 이름 헤더, 푸터)은 kit/share/BrandCard가 담당하고
+// 여기서는 TSLA4Tesla 고유의 내용만 children으로 채운다.
 const ShareCard = forwardRef<View, ShareCardProps>(function ShareCard(props, ref) {
   return (
-    <View ref={ref} collapsable={false} style={styles.card}>
-      <Text style={styles.appName}>TSLA4Tesla</Text>
+    <BrandCard
+      ref={ref}
+      brandColor={BRAND_RED}
+      appName="TSLA4Tesla"
+      footerText={props.asOfText}
+      width={CARD_WIDTH}
+    >
       <Text style={styles.headline}>{props.headline}</Text>
       <Text style={styles.carsText}>{props.carsText}</Text>
       <Text style={styles.model}>{props.model}</Text>
@@ -86,26 +92,13 @@ const ShareCard = forwardRef<View, ShareCardProps>(function ShareCard(props, ref
         <Text style={styles.detailValue}>{props.totalValueText}</Text>
       </View>
       <Text style={styles.shortfall}>{props.shortfallText}</Text>
-      <Text style={styles.footer}>{props.asOfText}</Text>
-    </View>
+    </BrandCard>
   );
 });
 
 export default ShareCard;
 
 const styles = StyleSheet.create({
-  card: {
-    width: CARD_WIDTH,
-    backgroundColor: BRAND_RED,
-    borderRadius: 16,
-    padding: 24,
-  },
-  appName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 20,
-  },
   headline: {
     fontSize: 15,
     color: 'rgba(255,255,255,0.9)',
@@ -150,9 +143,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: 'rgba(255,255,255,0.8)',
     marginBottom: 14,
-  },
-  footer: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.6)',
   },
 });

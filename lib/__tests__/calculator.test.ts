@@ -2,7 +2,6 @@ import {
   parseStockCount,
   calculatePurchase,
   buildHistorySeries,
-  formatCurrency,
 } from '../calculator';
 
 describe('parseStockCount', () => {
@@ -65,19 +64,5 @@ describe('buildHistorySeries', () => {
     const result = buildHistorySeries([], [], 100, 40000, koMonth);
     expect(result.labels).toEqual([]);
     expect(result.values).toEqual([]);
-  });
-});
-
-describe('formatCurrency', () => {
-  it('locale 표기법으로 USD 통화를 소수 2자리까지 표시한다', () => {
-    const ko = formatCurrency(1234.5, 'ko');
-    expect(ko).toContain('1,234.50');
-    expect(ko).toMatch(/US?\$/);
-
-    expect(formatCurrency(1234.5, 'en')).toBe('$1,234.50');
-
-    const de = formatCurrency(1234.5, 'de');
-    expect(de).toContain('1.234,50');
-    expect(de).toContain('$');
   });
 });

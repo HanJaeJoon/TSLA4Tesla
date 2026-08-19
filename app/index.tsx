@@ -11,31 +11,33 @@ import {
   Dimensions,
   Platform,
   RefreshControl,
-  useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
-import { LineChart } from 'react-native-chart-kit';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import {
   parseStockCount,
   calculatePurchase,
   buildHistorySeries,
-  formatCurrency,
   shortfallToNextCar,
   getPeriodConfig,
-  decimateLabels,
   ChartPeriod,
   StockCountError,
 } from '../lib/calculator';
-import { resolveTargetCurrency, formatApproxConverted } from '../lib/currency';
+import { resolveTargetCurrency, formatApproxConverted, formatCurrency } from '../kit/currency';
 import { t, appLocale, deviceCurrencyCode } from '../lib/i18n';
 import { saveInputs, loadInputs } from '../lib/preferences';
-import { captureRef } from 'react-native-view-shot';
-import * as Sharing from 'expo-sharing';
-import * as MediaLibrary from 'expo-media-library';
-import AdBanner from '../components/AdBanner';
+import { useThemeColors, ThemeColors } from '../kit/theme';
+import { ThemedLineChart } from '../kit/chart/ThemedLineChart';
+import {
+  captureCard,
+  shareImage,
+  saveImageToLibrary,
+  useShareAvailability,
+} from '../kit/share/capture';
+import { decimateLabels } from '../kit/chart/decimateLabels';
+import AdBanner from '../kit/ads/AdBanner';
 import ShareCard from '../components/ShareCard';
 import { getSnapshotSeries, getSnapshotRate, MarketSnapshot } from '../lib/snapshot';
 import marketSnapshotJson from '../assets/data/market-snapshot.json';
@@ -53,31 +55,7 @@ const MAX_CHART_LABELS = 6;
 const FETCH_TIMEOUT_MS = 10000;
 
 const BRAND_RED = '#E82127';
-
-const PALETTES = {
-  light: {
-    background: '#f5f5f5',
-    card: '#ffffff',
-    text: '#333333',
-    subtext: '#666666',
-    faint: '#999999',
-    border: '#dddddd',
-    buttonBg: '#f0f0f0',
-    chartGrid: '#f0f0f0',
-    bannerBg: '#fdecea',
-  },
-  dark: {
-    background: '#121212',
-    card: '#1e1e1e',
-    text: '#f2f2f2',
-    subtext: '#b3b3b3',
-    faint: '#8a8a8a',
-    border: '#3a3a3a',
-    buttonBg: '#2a2a2a',
-    chartGrid: '#2e2e2e',
-    bannerBg: '#3a2020',
-  },
-};
+const BANNER_AD_UNIT_ID = 'ca-app-pub-2903995158289675/6341864832';
 
 // Tesla 차량 모델 및 트림 정보
 const TESLA_VEHICLES = {
@@ -137,8 +115,10 @@ const fetchJsonWithTimeout = async (url: string) => {
 type PriceStatus = 'loading' | 'live' | 'stale' | 'snapshot';
 
 export default function HomeScreen() {
-  const colorScheme = useColorScheme();
-  const colors = PALETTES[colorScheme === 'dark' ? 'dark' : 'light'];
+  const colors = useThemeColors({
+    light: { bannerBg: '#fdecea' },
+    dark: { bannerBg: '#3a2020' },
+  });
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const [stockCount, setStockCount] = useState('');
@@ -362,25 +342,14 @@ export default function HomeScreen() {
 
   // 공유 시트를 지원하는 환경에서만 공유 버튼 노출
   const shareCardRef = useRef<View>(null);
-  const [canShare, setCanShare] = useState(false);
+  const canShare = useShareAvailability();
   const [isSharing, setIsSharing] = useState(false);
-  useEffect(() => {
-    Sharing.isAvailableAsync()
-      .then(setCanShare)
-      .catch(() => setCanShare(false));
-  }, []);
-
-  const captureShareCard = async () => {
-    const uri = await captureRef(shareCardRef, { format: 'png', quality: 1 });
-    return uri.startsWith('file') ? uri : `file://${uri}`;
-  };
 
   const shareResultCard = async () => {
     if (isSharing) return;
     setIsSharing(true);
     try {
-      const uri = await captureShareCard();
-      await Sharing.shareAsync(uri, { mimeType: 'image/png' });
+      await shareImage(await captureCard(shareCardRef));
     } catch {
       Alert.alert(t('shareFailTitle'), t('shareFailBody'), [{ text: t('alertOk') }]);
     } finally {
@@ -396,13 +365,11 @@ export default function HomeScreen() {
     if (isSaving) return;
     setIsSaving(true);
     try {
-      const { granted } = await MediaLibrary.requestPermissionsAsync(true);
-      if (!granted) {
+      const result = await saveImageToLibrary(await captureCard(shareCardRef));
+      if (result === 'denied') {
         Alert.alert(t('saveFailTitle'), t('savePermission'), [{ text: t('alertOk') }]);
         return;
       }
-      const uri = await captureShareCard();
-      await MediaLibrary.saveToLibraryAsync(uri);
       Alert.alert(t('saveDoneTitle'), t('saveDoneBody'), [{ text: t('alertOk') }]);
     } catch {
       Alert.alert(t('saveFailTitle'), t('saveFailBody'), [{ text: t('alertOk') }]);
@@ -639,32 +606,13 @@ export default function HomeScreen() {
               )}
               {!isLoadingHistory && historyData && historyData.values.length > 1 && (
                 <>
-                  <LineChart
-                    data={{
-                      labels: historyData.labels,
-                      datasets: [{ data: historyData.values }],
-                    }}
+                  <ThemedLineChart
+                    labels={historyData.labels}
+                    values={historyData.values}
                     width={SCREEN_WIDTH - 80}
-                    height={220}
                     yAxisSuffix={t('chartYAxisSuffix')}
-                    yAxisInterval={1}
-                    chartConfig={{
-                      backgroundColor: colors.card,
-                      backgroundGradientFrom: colors.card,
-                      backgroundGradientTo: colors.card,
-                      decimalPlaces: 1,
-                      color: (opacity = 1) => `rgba(232, 33, 39, ${opacity})`,
-                      labelColor: () => colors.subtext,
-                      propsForDots: {
-                        r: '4',
-                        strokeWidth: '2',
-                        stroke: BRAND_RED,
-                      },
-                      propsForBackgroundLines: {
-                        stroke: colors.chartGrid,
-                      },
-                    }}
-                    bezier
+                    brandColor={BRAND_RED}
+                    colors={colors}
                     style={styles.chart}
                   />
                   <View style={styles.chartLegend}>
@@ -698,12 +646,12 @@ export default function HomeScreen() {
           />
         </View>
       )}
-      <AdBanner />
+      <AdBanner productionUnitId={BANNER_AD_UNIT_ID} />
     </SafeAreaView>
   );
 }
 
-const makeStyles = (colors: (typeof PALETTES)['light']) =>
+const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,

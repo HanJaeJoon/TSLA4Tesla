@@ -1,5 +1,4 @@
 import { translations, SUPPORTED_LOCALES, SupportedLocale } from '../i18n/translations';
-import { pickSupportedLocale } from '../i18n/locale';
 
 // 중첩 객체의 키를 "a.b" 형태로 평탄화
 const flattenKeys = (obj: Record<string, unknown>, prefix = ''): string[] =>
@@ -35,29 +34,5 @@ describe('translations', () => {
       };
       check(translations[locale]);
     }
-  });
-});
-
-describe('pickSupportedLocale', () => {
-  it('첫 번째 지원 언어를 선택한다', () => {
-    expect(pickSupportedLocale(['ko'])).toBe('ko');
-    expect(pickSupportedLocale(['ja', 'en'])).toBe('ja');
-  });
-
-  it('미지원 언어는 건너뛰고 다음 지원 언어를 선택한다', () => {
-    expect(pickSupportedLocale(['fr', 'de'])).toBe('de');
-  });
-
-  it('지원 언어가 없으면 en으로 fallback한다', () => {
-    expect(pickSupportedLocale(['fr', 'it'])).toBe('en');
-    expect(pickSupportedLocale([])).toBe('en');
-  });
-
-  it('중국어 계열(zh)은 zh 리소스로 매핑한다', () => {
-    expect(pickSupportedLocale(['zh'])).toBe('zh');
-  });
-
-  it('null/undefined 언어 코드는 무시한다', () => {
-    expect(pickSupportedLocale([null, undefined, 'es'])).toBe('es');
   });
 });
