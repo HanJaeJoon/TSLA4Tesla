@@ -23,3 +23,6 @@ expo-env.d.ts
 # expo prebuild (CNG) 산출물 - 매 빌드 재생성되므로 커밋하지 않는다
 /android
 /ios
+
+# superpowers 워크플로 문서는 저장소에 커밋하지 않는다
+docs/superpowers/
