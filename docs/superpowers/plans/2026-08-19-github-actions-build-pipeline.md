@@ -40,7 +40,7 @@
 
 **배경:** TSLA4Tesla는 이미 Play에 게시되어 Play 앱 서명이 적용돼 있다. 업로드 키가 바뀐 AAB는 Play가 거부한다. 현재 이 키는 EAS가 보관 중이므로 먼저 내려받아야 한다. 이 단계를 건너뛰고 새 키로 서명하면 앱 업데이트가 영구 차단되고, 복구에 Google 업로드 키 재설정 요청(수일 소요)이 필요하다.
 
-- [ ] **Step 1: EAS 자격증명 화면 진입**
+- [x] **Step 1: EAS 자격증명 화면 진입**
 
 터미널에서 실행 (대화형이므로 사용자가 직접):
 
@@ -50,7 +50,7 @@ npx eas-cli credentials
 
 플랫폼 선택에서 `Android`, 프로필은 `production`을 고른다.
 
-- [ ] **Step 2: 키스토어 내려받기**
+- [x] **Step 2: 키스토어 내려받기**
 
 메뉴에서 `Keystore: Manage everything needed to build your project` -> `Download existing keystore`를 선택한다.
 
@@ -61,26 +61,35 @@ CLI가 다음 4가지를 출력하거나 파일로 저장한다. **전부 기록
 - Key alias
 - Key password
 
-- [ ] **Step 3: 키스토어 유효성 확인**
+- [x] **Step 3: expo.dev에서 키스토어 지문 확인**
 
-내려받은 파일이 실제로 열리는지 확인한다. `<경로>`와 `<alias>`는 Step 2에서 얻은 값으로 바꾼다:
+**로컬 `keytool` 사용을 전제하지 않는다.** 이 개발 환경에는 JDK가 설치돼 있지 않고(2026-08-19 확인), 빌드가 전부 Actions에서 도므로 앞으로도 설치할 이유가 없다. 대신 expo.dev가 해당 키스토어의 지문을 화면에 표시해주므로 그것을 쓴다.
 
-```bash
-keytool -list -v -keystore <경로>/keystore.jks -alias <alias>
+expo.dev > 프로젝트 > Credentials > Android > production > Keystore 카드의 **SHA-256 fingerprint** 값을 기록한다.
+
+실물 AAB에 대한 검증은 Task 4 Step 8에서 CI가 수행한다 (Actions 러너에는 JDK 17이 있다). 그쪽이 "키가 맞는가"보다 강한 "이 AAB가 올바른 키로 서명됐는가"를 확인하므로, 로컬 확인은 생략해도 검증 공백이 생기지 않는다.
+
+- [x] **Step 4: Play Console의 업로드 인증서와 대조**
+
+Play Console > TSLA4Tesla > 좌측 메뉴 **Google Play로 보호됨** > **앱 서명**으로 이동한다.
+
+주의: 이 페이지에는 블록이 두 개 있다. 위쪽 **"앱 서명 키"**(Google이 보관하는 배포용 키, 지문이 버튼 뒤에 숨어 있음)가 아니라, 아래쪽 **"업로드 키 인증서"** 블록의 **SHA-256 인증서 지문**과 대조해야 한다.
+
+직접 링크:
+`https://play.google.com/console/u/0/developers/8656894949276987026/app/4972640630515465678/keymanagement`
+
+**확인된 기준값 (2026-08-19):**
+
+```
+A2:AA:AB:6A:63:E5:06:BF:E4:47:99:B3:28:F0:30:87:CC:1B:28:DF:BF:9D:B4:30:83:10:91:41:11:01:4B:2D
 ```
 
-Keystore password를 입력하면 인증서 정보가 출력된다. 출력 중 **`SHA256:` 로 시작하는 인증서 지문을 기록한다.** Task 5에서 CI가 만든 AAB의 서명과 대조할 기준값이다.
-
-- [ ] **Step 4: Play Console의 업로드 인증서와 대조**
-
-Play Console > TSLA4Tesla > 테스트 및 출시 > 설정 > **앱 서명**으로 이동한다.
-
-"업로드 키 인증서" 섹션의 **SHA-256 인증서 지문**이 Step 3에서 기록한 값과 **일치해야 한다.**
+expo.dev 값과 Play Console 값이 **일치함을 확인했다.** Task 4 Step 8에서 CI가 출력하는 AAB 서명 지문도 이 값과 같아야 한다.
 
 - 일치: 올바른 키를 확보한 것이다. Task 2로 진행
 - 불일치: 다른 프로필의 키를 받았을 가능성이 크다. Step 1로 돌아가 프로필을 다시 확인한다. **불일치 상태로 계속 진행하면 안 된다**
 
-- [ ] **Step 5: 키스토어 파일을 저장소 밖에 보관**
+- [x] **Step 5: 키스토어 파일을 저장소 밖에 보관**
 
 `.gitignore`에 `*.jks`가 이미 있어 커밋되지는 않지만, 저장소 디렉터리 안에 두지 않는 편이 안전하다. 저장소 바깥의 안전한 위치로 옮긴다.
 
@@ -173,7 +182,7 @@ git commit -m "chore: CI용 typecheck/test:ci 스크립트 추가"
 
 **배경:** 시크릿 없이 먼저 돌려서 툴체인(Node/JDK/Android SDK/prebuild/Gradle)만 검증한다. Expo가 생성하는 `build.gradle`의 release 서명 설정은 기본적으로 디버그 키를 쓰므로 이 단계에서도 AAB는 만들어진다. 이렇게 분리하면 다음 작업에서 실패했을 때 원인이 툴체인이 아니라 시크릿/서명임이 확정된다.
 
-- [ ] **Step 1: prebuild 산출물을 gitignore에 추가**
+- [x] **Step 1: prebuild 산출물을 gitignore에 추가**
 
 `expo prebuild`는 `android/`와 `ios/`를 생성한다. 현재 `.gitignore`에 두 경로가 없어 실수로 커밋될 수 있다. 파일 끝에 다음을 추가한다:
 
@@ -183,7 +192,7 @@ git commit -m "chore: CI용 typecheck/test:ci 스크립트 추가"
 /ios
 ```
 
-- [ ] **Step 2: 워크플로 파일 작성**
+- [x] **Step 2: 워크플로 파일 작성**
 
 `.github/workflows/build.yml`을 새로 만든다:
 
