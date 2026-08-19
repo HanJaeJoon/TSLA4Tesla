@@ -99,7 +99,7 @@ Play Console > TSLA4Tesla > 테스트 및 출시 > 설정 > **앱 서명**으로
 
 **배경:** 현재 `"test": "jest --watchAll"`은 감시 모드라 CI에서 종료되지 않고 워크플로 타임아웃까지 매달린다. 또 타입 검사를 실행하는 스크립트가 없어 `strict: true`가 켜져 있음에도 타입 오류가 빌드 시점까지 발견되지 않는다.
 
-- [ ] **Step 1: 현재 스크립트가 CI에서 못 쓰는 상태임을 확인**
+- [x] **Step 1: 현재 스크립트가 CI에서 못 쓰는 상태임을 확인**
 
 ```bash
 npm test -- --listTests
@@ -107,7 +107,7 @@ npm test -- --listTests
 
 `--watchAll`이 붙어 있어 프로세스가 스스로 끝나지 않는 것을 확인한다. 확인했으면 `Ctrl+C`로 중단한다.
 
-- [ ] **Step 2: 스크립트 2개 추가**
+- [x] **Step 2: 스크립트 2개 추가**
 
 `package.json`의 `scripts` 블록에 다음 두 줄을 추가한다. 기존 `"test": "jest --watchAll"`은 로컬 개발용이므로 **그대로 둔다.**
 
@@ -132,7 +132,7 @@ npm test -- --listTests
 }
 ```
 
-- [ ] **Step 3: test:ci가 스스로 종료되는지 확인**
+- [x] **Step 3: test:ci가 스스로 종료되는지 확인**
 
 ```bash
 npm run test:ci
@@ -140,7 +140,7 @@ npm run test:ci
 
 Expected: 기존 테스트 7개 파일이 모두 통과하고 **명령이 프롬프트로 돌아온다.** 돌아오지 않으면 `--watchAll=false`가 빠진 것이다.
 
-- [ ] **Step 4: typecheck 통과 확인**
+- [x] **Step 4: typecheck 통과 확인**
 
 ```bash
 npm run typecheck
@@ -150,7 +150,9 @@ Expected: 출력 없이 종료 코드 0.
 
 오류가 나면 실제 타입 문제이므로 여기서 고친다. 특히 `.expo/types/`가 생성돼 있지 않으면 expo-router 관련 타입 오류가 날 수 있다. 그 경우 `npx expo start` 를 한 번 실행해 타입을 생성한 뒤 다시 시도한다. **이 관찰 결과를 기록해 둔다 - Task 3에서 CI 단계 순서를 정하는 근거가 된다.**
 
-- [ ] **Step 5: 커밋**
+**관찰 결과 (2026-08-19):** `.expo/`와 `expo-env.d.ts`를 제거한 CI 동일 조건에서도 `tsc --noEmit`이 종료 코드 0으로 통과했다. 따라서 Task 3에서 `Typecheck` 단계를 `Expo prebuild` 뒤로 옮길 필요가 없다.
+
+- [x] **Step 5: 커밋**
 
 ```bash
 git add package.json
