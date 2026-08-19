@@ -248,7 +248,7 @@ jobs:
           if-no-files-found: error
 ```
 
-- [ ] **Step 3: 커밋 및 푸시**
+- [x] **Step 3: 커밋 및 푸시**
 
 워크플로는 기본 브랜치가 아닌 곳에서도 `workflow_dispatch`로 실행할 수 있지만, 브랜치를 선택하려면 원격에 올라가 있어야 한다.
 
@@ -258,11 +258,11 @@ git commit -m "ci: GitHub Actions Android 빌드 워크플로 추가"
 git push -u origin dev/jjhan-adapp-kit
 ```
 
-- [ ] **Step 4: 워크플로 실행**
+- [x] **Step 4: 워크플로 실행**
 
 GitHub 저장소 > Actions > `Android Build` > `Run workflow` -> 브랜치 `dev/jjhan-adapp-kit` 선택 후 실행한다.
 
-- [ ] **Step 5: 결과 확인**
+- [x] **Step 5: 결과 확인**
 
 Expected: 모든 단계 성공, `app-release-aab` artifact 생성.
 
@@ -273,11 +273,11 @@ Expected: 모든 단계 성공, `app-release-aab` artifact 생성.
 - **Gradle OOM / 힙 부족**: `Build AAB` 단계에 `env: GRADLE_OPTS: -Xmx4g` 를 추가한다
 - **google-mobile-ads 관련 Kotlin 오류**: `react-native-google-mobile-ads` 버전이 16.3.4인지 확인한다 (Global Constraints)
 
-- [ ] **Step 6: 서명 주체 확인 (이 단계에서는 불일치가 정상)**
+- [x] **Step 6: 서명 주체 확인 (이 단계에서는 불일치가 정상)**
 
 `Show signing certificate` 단계의 로그를 본다. `SHA256:` 지문이 출력되며, 이 값은 Task 1 Step 3의 업로드 키 지문과 **다를 것이다** (디버그 키로 서명됐기 때문). 여기서는 "AAB가 만들어지고 서명 정보를 읽을 수 있다"는 사실만 확인하면 된다.
 
-- [ ] **Step 7: 수정이 있었다면 커밋**
+- [x] **Step 7: 수정이 있었다면 커밋**
 
 Step 5에서 워크플로를 고쳤다면:
 
@@ -300,7 +300,7 @@ git push
 
 **배경:** `expo prebuild`가 `android/`를 매번 새로 만들기 때문에 생성된 `build.gradle`을 수정하는 방식은 쓸 수 없다. 대신 AGP가 제공하는 `android.injected.signing.*` Gradle 프로퍼티로 서명 정보를 주입한다. 이 방식은 생성 파일을 건드리지 않는다.
 
-- [ ] **Step 1: 키스토어를 base64로 변환**
+- [x] **Step 1: 키스토어를 base64로 변환**
 
 바이너리 파일은 GitHub Secrets에 직접 넣을 수 없으므로 base64로 인코딩한다. `<경로>`는 Task 1의 실제 경로로 바꾼다:
 
@@ -312,7 +312,7 @@ macOS라면 `-w 0` 대신 `base64 -i <경로>/keystore.jks -o keystore.b64` 를 
 
 **주의:** 줄바꿈이 섞이면 복원 시 깨진다. 위 명령의 `-w 0`이 줄바꿈을 막는다.
 
-- [ ] **Step 2: GitHub Secrets 등록 (사용자 수동 작업)**
+- [x] **Step 2: GitHub Secrets 등록 (사용자 수동 작업)**
 
 저장소 > Settings > Secrets and variables > Actions > New repository secret 에서 4개를 등록한다. 이름은 **정확히 아래와 같아야 한다** (워크플로가 이 이름을 참조한다):
 
@@ -323,13 +323,13 @@ macOS라면 `-w 0` 대신 `base64 -i <경로>/keystore.jks -o keystore.b64` 를 
 | `ANDROID_KEY_ALIAS` | Task 1의 key alias |
 | `ANDROID_KEY_PASSWORD` | Task 1의 key password |
 
-- [ ] **Step 3: 임시 파일 삭제**
+- [x] **Step 3: 임시 파일 삭제**
 
 ```bash
 rm keystore.b64
 ```
 
-- [ ] **Step 4: 워크플로에 키스토어 복원 단계 추가**
+- [x] **Step 4: 워크플로에 키스토어 복원 단계 추가**
 
 `.github/workflows/build.yml`의 `Expo prebuild` 단계와 `Build AAB` 단계 **사이에** 다음을 삽입한다:
 
@@ -340,7 +340,7 @@ rm keystore.b64
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
 ```
 
-- [ ] **Step 5: Build AAB 단계를 서명 주입 방식으로 교체**
+- [x] **Step 5: Build AAB 단계를 서명 주입 방식으로 교체**
 
 기존 `Build AAB` 단계를 다음으로 **통째로 대체**한다:
 
@@ -361,7 +361,7 @@ rm keystore.b64
 
 **주의:** 비밀번호를 `-P` 인자에 직접 쓰지 않고 환경변수를 거치는 이유는, Gradle이 실패했을 때 로그에 전체 명령줄을 출력하면서 비밀번호가 노출되는 것을 막기 위해서다.
 
-- [ ] **Step 6: 커밋 및 푸시**
+- [x] **Step 6: 커밋 및 푸시**
 
 ```bash
 git add .github/workflows/build.yml
@@ -369,11 +369,11 @@ git commit -m "ci: 업로드 키스토어 서명 적용"
 git push
 ```
 
-- [ ] **Step 7: 워크플로 재실행**
+- [x] **Step 7: 워크플로 재실행**
 
 Actions > `Android Build` > `Run workflow` (브랜치 `dev/jjhan-adapp-kit`).
 
-- [ ] **Step 8: 서명 일치 검증 (이 작업의 합격 기준)**
+- [x] **Step 8: 서명 일치 검증 (이 작업의 합격 기준)**
 
 `Show signing certificate` 단계 로그의 `SHA256:` 지문을 확인한다.
 
@@ -395,7 +395,7 @@ Expected: **Task 1 Step 3에서 기록한 업로드 키 지문과 정확히 일�
 
 **배경:** 서명 지문 대조(Task 4 Step 8)는 강력한 사전 검증이지만, Play가 실제로 받아들이는지는 업로드해봐야 확정된다. **프로덕션이 아니라 내부 테스트 트랙에만 올린다.** 내부 테스트는 프로덕션 롤아웃에 영향을 주지 않는다.
 
-- [ ] **Step 1: versionCode 증가**
+- [x] **Step 1: versionCode 증가**
 
 현재 프로덕션은 versionCode 6이다. Play는 같은 versionCode를 두 번 받지 않으므로 7로 올린다.
 
