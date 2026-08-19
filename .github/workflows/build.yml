@@ -2,6 +2,14 @@ name: Android Build
 
 on:
   workflow_dispatch:
+  # workflow_dispatch 워크플로는 기본 브랜치에 파일이 있어야 Actions UI 목록에 뜬다.
+  # main 병합 전까지는 작업 브랜치 push로 실행한다. 병합 시 이 push 블록은 제거한다.
+  push:
+    branches:
+      - dev/jjhan-adapp-kit
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
 
 jobs:
   build:
