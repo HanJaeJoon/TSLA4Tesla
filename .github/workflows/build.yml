@@ -1,0 +1,106 @@
+name: Android Build
+
+on:
+  # 수동 실행 전용. Actions > Android Build > Run workflow 에서 브랜치를 골라 실행한다.
+  # (workflow_dispatch 워크플로는 기본 브랜치에 파일이 있어야 UI 목록에 노출된다)
+  workflow_dispatch:
+
+env:
+  # Play Console > Google Play로 보호됨 > 앱 서명 > 업로드 키 인증서의 SHA-256.
+  # 인증서 지문은 공개 정보이므로 저장소에 두어도 안전하다. 비밀은 키스토어와 비밀번호뿐이다.
+  EXPECTED_UPLOAD_CERT_SHA256: A2:AA:AB:6A:63:E5:06:BF:E4:47:99:B3:28:F0:30:87:CC:1B:28:DF:BF:9D:B4:30:83:10:91:41:11:01:4B:2D
+  AAB_PATH: android/app/build/outputs/bundle/release/app-release.aab
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # versionCode 가드가 vc* 태그를 읽어야 하므로 전체 이력을 가져온다
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # 빌드에 25분을 쓰기 전에 실패해야 의미가 있으므로 앞쪽에 둔다.
+      # 출시 이력은 vc<N> 형식의 git 태그로 기록한다 (Play API 연동 전까지의 기준값).
+      - name: Guard versionCode
+        run: |
+          CURRENT=$(node -p "require('./app.json').expo.android.versionCode")
+          HIGHEST=$(git tag -l 'vc*' | sed 's/^vc//' | sort -n | tail -1)
+          HIGHEST=${HIGHEST:-0}
+          echo "app.json versionCode=$CURRENT / 출시된 최고 태그=vc$HIGHEST"
+          if [ "$CURRENT" -le "$HIGHEST" ]; then
+            echo "::error::versionCode $CURRENT 는 이미 출시된 vc$HIGHEST 이하입니다. app.json의 versionCode를 올리세요."
+            exit 1
+          fi
+          echo "versionCode 검사 통과"
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm run test:ci
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Expo prebuild
+        run: npx expo prebuild --platform android --clean
+
+      - name: Restore keystore
+        run: echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+
+      - name: Build AAB
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          ./gradlew :app:bundleRelease --no-daemon \
+            -Pandroid.injected.signing.store.file="$RUNNER_TEMP/upload.jks" \
+            -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$ANDROID_KEY_PASSWORD"
+
+      - name: Verify signing certificate
+        run: |
+          ACTUAL=$(keytool -printcert -jarfile "$AAB_PATH" \
+            | grep -m1 'SHA256:' | sed 's/.*SHA256://' | tr -d ' \t\r')
+          EXPECTED=$(echo "$EXPECTED_UPLOAD_CERT_SHA256" | tr -d ' \t\r')
+          echo "기대값: $EXPECTED"
+          echo "실제값: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "::error::AAB에서 서명 인증서를 읽지 못했습니다."
+            exit 1
+          fi
+          if [ "$(echo "$ACTUAL" | tr 'a-f' 'A-F')" != "$(echo "$EXPECTED" | tr 'a-f' 'A-F')" ]; then
+            echo "::error::서명 인증서가 Play 업로드 키와 일치하지 않습니다. Play에 업로드하지 마세요."
+            exit 1
+          fi
+          echo "서명 검증 통과 - Play 업로드 키와 일치"
+
+      - name: Remove keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.jks"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-release-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
