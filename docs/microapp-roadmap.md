@@ -68,6 +68,56 @@ kit 테스트는 앱 코드 없이 독립 실행된다 (`npx jest kit`). 이것�
 
 **첫 검증 앱은 대출 상환 계산기.** 원리금균등 / 원금균등 / 만기일시 3종 비교. kit 모듈 전부를 사용하면서 수식이 만국공통이라 다국어 자산을 그대로 쓸 수 있다. 계산 로직의 함정은 이율 0%에서의 0 나눗셈, 반올림 누적 오차(마지막 회차 balloon adjustment), 통화별 소수점 자릿수다.
 
+## 패키지 매니저를 pnpm 으로 옮긴다 (2026-08-20 결정, 미착수)
+
+**취향이 아니라 실제로 두 번 물린 버그의 근본 해결이다.**
+
+`npm ci` 가 CI 에서 죽은 일이 TSLA4Tesla(SDK 57 작업)와 loan-calculator(첫 빌드)에서
+각각 있었다. 원인은 같다 - Windows 의 `npm install` 이 Linux 에 필요한 optional
+전이 의존(`@emnapi/*`)을 락파일에서 지운다 (위 역전파 목록과
+`docs/sdk-upgrade-54-to-57.md` 5번). **pnpm 락파일은 플랫폼 무관하게 optional
+의존을 전부 기록하므로 이 실패 모드가 구조적으로 없어진다.** "락파일 건드린 뒤
+최상위 호이스팅을 확인한다" 는 규율 자체가 필요 없어진다.
+
+### Expo 쪽 전제 (공식 문서, 2026-08-20 확인)
+
+- pnpm 으로 만든 Expo 프로젝트는 `nodeLinker=hoisted` 가 기본이다
+- **SDK 54 부터 isolated 설치도 지원**하므로 `nodeLinker` 를 지울 수 있다
+- 다만 일부 React Native 라이브러리가 isolated 구조와 호환되지 않아 빌드/해석
+  오류가 나면 hoisted 로 되돌리라고 명시돼 있다
+
+**hoisted 로 시작한다.** `react-native-google-mobile-ads`, `react-native-view-shot`,
+`react-native-chart-kit` 이 정확히 그 "호환 안 될 수 있는" 부류다. isolated 는
+나중에 시도할 옵션으로 남긴다.
+
+### 저장소당 바꿀 것
+
+| 대상 | 변경 |
+|---|---|
+| `.npmrc` (신규) | `node-linker=hoisted` |
+| `package.json` | `packageManager: "pnpm@<버전>"` 추가 |
+| 락파일 | `package-lock.json` 삭제 -> `pnpm-lock.yaml` |
+| `build.yml` | `pnpm/action-setup` 추가, `cache: pnpm`, `npm ci` -> `pnpm install --frozen-lockfile`, `npx expo prebuild` -> `pnpm expo prebuild` |
+
+**함정: npm 의 `overrides` 를 pnpm 은 조용히 무시한다.** TSLA4Tesla 에 3개 있다
+(`@tootallnate/once`, `postcss`, `xcode.uuid`). `pnpm.overrides` 로 옮겨야 하고,
+중첩 형태는 문법이 달라 `xcode.uuid` 가 아니라 `xcode>uuid` 로 쓴다.
+안 옮기면 **에러 없이** 버전이 바뀐다. 보안 픽스로 넣은 것이라 특히 조심할 것.
+
+loan-calculator 의 `npm i -g npm@11.6.2` 단계는 이때 제거한다.
+락파일 문제를 감추던 잘못된 우회였다.
+
+### 순서
+
+1. **loan-calculator 락파일을 npm 으로 클린 재생성** (검증된 경로) 하고 두 앱을 출시한다.
+   두 앱 모두 검증된 AAB 를 들고 실기기 확인 한 단계만 남은 상태다. 여기서 패키지
+   매니저를 바꾸면 양쪽 락파일이 무효가 되고 재빌드(각 25-50분)와 실기기 재확인이
+   다시 필요하다. **TSLA4Tesla 로 실증된 툴체인을 첫 출시 직전에 바꾸는 것은
+   위험 대비 이득이 없다**
+2. `microapp-starter` 를 pnpm 으로 전환하고 **빌드 통과를 확인**한다
+3. TSLA4Tesla, loan-calculator 에 전파한다 (`overrides` 변환 주의)
+4. 이후 새 앱은 처음부터 pnpm
+
 ## 신규 앱 출시 시 반복 작업
 
 앱마다 필요한 것:
@@ -123,6 +173,10 @@ kit 테스트는 앱 코드 없이 독립 실행된다 (`npx jest kit`). 이것�
   |---|---|---|---|
   | TSLA4Tesla | 2 | 0 | 정상 (SDK 57 작업에서 클린 재생성함) |
   | loan-calculator | 0 | 3 | **깨져 있다. 클린 재생성 필요** |
+
+  **pnpm 전환이 끝나면 이 항목은 사라진다** (위 pnpm 절). pnpm 락파일은 플랫폼
+  무관하게 optional 의존을 기록하므로 이 실패 모드가 구조적으로 없다. 그때까지는
+  스타터에 이 확인 절차를 적어 두는 것이 맞다.
 
 - **`scripts/make-icons.py`** - loan-calculator 에만 있다. 아이콘 6개와 Play 용
   512/1024x500 을 생성하며, 브랜드 색 상수 두 개(`BRAND`, `TINT`)만 바꾸면
