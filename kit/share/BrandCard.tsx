@@ -11,6 +11,7 @@ export type BrandCardProps = {
 
 // 공유 이미지 캡처 전용 카드 골격. 화면 밖에 렌더링해 두고 captureCard로 캡처한다.
 // 다크모드와 무관하게 항상 브랜드 색 고정.
+// borderRadius를 주지 않는다 - 캡처 PNG의 모서리가 투명해져 뷰어에 따라 흰 가장자리로 보인다.
 export const BrandCard = forwardRef<View, BrandCardProps>(function BrandCard(props, ref) {
   return (
     <View
@@ -27,7 +28,6 @@ export const BrandCard = forwardRef<View, BrandCardProps>(function BrandCard(pro
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
     padding: 24,
   },
   appName: {
