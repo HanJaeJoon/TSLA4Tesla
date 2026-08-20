@@ -1,3 +1,4 @@
+import { I18n } from 'i18n-js';
 import { translations, SUPPORTED_LOCALES, SupportedLocale } from '../i18n/translations';
 
 // 중첩 객체의 키를 "a.b" 형태로 평탄화
@@ -35,4 +36,48 @@ describe('translations', () => {
       check(translations[locale]);
     }
   });
+});
+
+// count가 1일 때 단수형이 나와야 하는 키들 (i18n-js 복수형 규칙 사용)
+const PLURAL_KEYS = ['nextTargetLabel', 'shareHeadline'] as const;
+
+describe('복수형 처리', () => {
+  it.each(Object.keys(translations) as SupportedLocale[])(
+    '%s locale의 복수형 키는 one/other를 모두 가진다',
+    (locale) => {
+      for (const key of PLURAL_KEYS) {
+        expect(Object.keys(translations[locale][key]).sort()).toEqual(['one', 'other']);
+      }
+    }
+  );
+
+  const makeI18n = (locale: SupportedLocale) => {
+    const i18n = new I18n(translations);
+    i18n.locale = locale;
+    i18n.enableFallback = true;
+    i18n.defaultLocale = 'en';
+    return i18n;
+  };
+
+  it('en은 1일 때 단수형, 그 외에는 복수형을 쓴다', () => {
+    const i18n = makeI18n('en');
+    expect(i18n.t('nextTargetLabel', { count: 1 })).toBe('Next goal: 1 car');
+    expect(i18n.t('nextTargetLabel', { count: 2 })).toBe('Next goal: 2 cars');
+    expect(i18n.t('shareHeadline', { count: 1 })).toBe('My 1 TSLA share =');
+    expect(i18n.t('shareHeadline', { count: 3 })).toBe('My 3 TSLA shares =');
+  });
+
+  it.each(Object.keys(translations) as SupportedLocale[])(
+    '%s locale은 개수와 무관하게 누락 표시 없이 렌더링된다',
+    (locale) => {
+      const i18n = makeI18n(locale);
+      for (const key of PLURAL_KEYS) {
+        for (const count of [0, 1, 2, 1.5]) {
+          const text = i18n.t(key, { count });
+          expect(text).toContain(String(count));
+          expect(text).not.toMatch(/missing/i);
+        }
+      }
+    }
+  );
 });

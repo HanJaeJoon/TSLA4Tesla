@@ -559,7 +559,7 @@ export default function HomeScreen() {
 
             <View style={styles.resultCard}>
               <Text style={styles.resultLabel}>
-                {t('nextTargetLabel', { n: result.shortfall.targetCars })}
+                {t('nextTargetLabel', { count: result.shortfall.targetCars })}
               </Text>
               <Text style={styles.resultValue}>
                 {t('shortfall', {
@@ -639,13 +639,13 @@ export default function HomeScreen() {
         <View style={styles.shareCardOffscreen} pointerEvents="none">
           <ShareCard
             ref={shareCardRef}
-            headline={t('shareHeadline', { n: result.stockCountNum })}
+            headline={t('shareHeadline', { count: result.stockCountNum })}
             carsText={t('carsCount', { n: result.numberOfCars.toFixed(2) })}
             model={result.selectedModel}
             vehicle={result.vehicle}
             totalValueLabel={t('totalValueLabel')}
             totalValueText={formatCurrency(result.totalValue, appLocale)}
-            nextTargetText={t('nextTargetLabel', { n: result.shortfall.targetCars })}
+            nextTargetText={t('nextTargetLabel', { count: result.shortfall.targetCars })}
             shortfallText={t('shortfall', {
               shares: result.shortfall.neededShares.toFixed(1),
               value: formatCurrency(result.shortfall.neededValue, appLocale),
