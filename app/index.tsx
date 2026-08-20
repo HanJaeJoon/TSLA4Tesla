@@ -645,6 +645,7 @@ export default function HomeScreen() {
             vehicle={result.vehicle}
             totalValueLabel={t('totalValueLabel')}
             totalValueText={formatCurrency(result.totalValue, appLocale)}
+            nextTargetText={t('nextTargetLabel', { n: result.shortfall.targetCars })}
             shortfallText={t('shortfall', {
               shares: result.shortfall.neededShares.toFixed(1),
               value: formatCurrency(result.shortfall.neededValue, appLocale),

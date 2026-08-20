@@ -65,6 +65,7 @@ export type ShareCardProps = {
   vehicle: string;
   totalValueLabel: string;
   totalValueText: string;
+  nextTargetText: string;
   shortfallText: string;
   asOfText: string;
 };
@@ -91,6 +92,7 @@ const ShareCard = forwardRef<View, ShareCardProps>(function ShareCard(props, ref
         <Text style={styles.detailLabel}>{props.totalValueLabel}</Text>
         <Text style={styles.detailValue}>{props.totalValueText}</Text>
       </View>
+      <Text style={styles.nextTarget}>{props.nextTargetText}</Text>
       <Text style={styles.shortfall}>{props.shortfallText}</Text>
     </BrandCard>
   );
@@ -139,9 +141,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
   },
-  shortfall: {
+  nextTarget: {
     fontSize: 13,
     color: 'rgba(255,255,255,0.8)',
+    marginBottom: 2,
+  },
+  shortfall: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#fff',
     marginBottom: 14,
   },
 });
