@@ -96,18 +96,33 @@ kit 테스트는 앱 코드 없이 독립 실행된다 (`npx jest kit`). 이것�
 
 스타터 복제 방식이라 개선이 기존 앱에 자동으로 퍼지지 않는다. 지금 밀려 있는 것:
 
-- **CI 의 npm 버전 고정** - `microapp-starter` 와 `TSLA4Tesla` 의 워크플로에 없다.
-  loan-calculator 첫 빌드가 `npm ci` 에서 12초 만에 죽었다. Node 22 번들 npm 10 과
-  개발 머신 npm 11 이 `@napi-rs/wasm-runtime` 의 peer dep(`@emnapi/core`,
-  `@emnapi/runtime`)을 최상위로 올리는 규칙이 달라서, npm 11 로 만든 lock 을
-  "package.json 과 동기화되지 않았다"며 거부한다. Windows 에서 `npm install` 이나
-  `npm install --package-lock-only` 를 돌려도 그 항목은 추가되지 않는다.
-  플랫폼 문제가 아니라 npm 버전 규칙 차이다.
-  해법은 `npm ci` 앞에 `npm i -g npm@11.6.2` 한 줄.
+- **락파일 클린 재생성 규율** - `microapp-starter` 에 명시돼 있지 않다.
+  loan-calculator 첫 빌드가 `npm ci` 에서 12초 만에 죽었다.
+  `docs/sdk-upgrade-54-to-57.md` 5번에 이미 진단돼 있는 그 문제다.
 
-  **TSLA4Tesla 는 지금 당장은 괜찮다.** lock 최상위에 `@emnapi/core@1.10.0` 이 있어
-  npm 10 이 만족한다. 하지만 그건 lock 을 어느 npm 이 썼는지에 달린 우연이므로,
-  lock 을 다시 만들면 같은 함정에 빠진다. 스타터에 넣어 두는 것이 맞다.
+  `eslint-config-expo` 57 이 끌어오는 `unrs-resolver` 의 optional 바인딩
+  `@unrs/resolver-binding-wasm32-wasi` 가 `@emnapi/*` 를 요구한다. Windows 에서
+  `npm install <패키지>` 를 개별 실행하면 npm 이 이 플랫폼에 필요 없다고 판단해
+  `@emnapi/core` / `@emnapi/runtime` 을 락파일 최상위에서 지운다. Linux 는
+  최상위로 호이스팅해 계산하므로 없는 항목을 요구하고 `npm ci` 가 거부한다.
+
+  **고치는 방법은 `node_modules` 와 `package-lock.json` 을 둘 다 지우고
+  처음부터 `npm install` 하는 것뿐이다.** `npm install` 재동기화나
+  `npm install --package-lock-only` 로는 안 고쳐진다 (오히려 중첩이 늘어난다).
+
+  락파일 상태 확인:
+
+  ```bash
+  grep -c '"node_modules/@emnapi/core"\|"node_modules/@emnapi/runtime"' package-lock.json
+  grep -c 'resolver-binding-wasm32-wasi/node_modules/@emnapi' package-lock.json
+  ```
+
+  앞이 **2**, 뒤가 **0** 이어야 한다.
+
+  | | 최상위 | 하위 중첩 | 상태 |
+  |---|---|---|---|
+  | TSLA4Tesla | 2 | 0 | 정상 (SDK 57 작업에서 클린 재생성함) |
+  | loan-calculator | 0 | 3 | **깨져 있다. 클린 재생성 필요** |
 
 - **`scripts/make-icons.py`** - loan-calculator 에만 있다. 아이콘 6개와 Play 용
   512/1024x500 을 생성하며, 브랜드 색 상수 두 개(`BRAND`, `TINT`)만 바꾸면
