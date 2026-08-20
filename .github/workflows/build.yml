@@ -22,7 +22,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # react-native 0.86 의 engines 는 ^20.19.4 || ^22.13.0 || ^24.3.0 || >=25 다.
+          # "20" 은 최신 20.x 로 해석되어 지금은 통과하지만 범위 하한에 걸려 있어
+          # 여유가 없다. 22 로 올려 하한 논쟁을 없앤다.
+          node-version: 22
           cache: npm
 
       - name: Install dependencies

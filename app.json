@@ -38,7 +38,12 @@
         }
       ],
       "expo-localization",
-      "expo-media-library"
+      "expo-media-library",
+      "expo-font",
+      "expo-sharing",
+      "expo-splash-screen",
+      "expo-status-bar",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

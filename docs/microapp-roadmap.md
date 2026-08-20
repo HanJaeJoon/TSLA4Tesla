@@ -16,11 +16,15 @@
 |---|---|---|
 | 0-1 | EAS Build -> GitHub Actions 이전 | **완료** (`f9dbf88`) |
 | 2 | TSLA4Tesla에서 `kit/` 추출 | **완료** (`523018d`) |
-| - | Expo SDK 54 -> 57 업그레이드 | **다음 작업** (`docs/sdk-upgrade-54-to-57.md`) |
-| 3 | `microapp-starter` 템플릿 저장소 생성 | 중단됨 (SDK 간극) |
-| 4 | 첫 검증 앱: 대출 상환 계산기 | 미착수 |
+| - | Expo SDK 54 -> 57 업그레이드 | **완료** (Actions 빌드 성공, 실기기 확인 대기) |
+| 3 | `microapp-starter` 템플릿 저장소 생성 | **로컬 완료** (GitHub 저장소 생성 대기) |
+| 4 | 첫 검증 앱: 대출 상환 계산기 | **로컬 완료** (계정 작업 대기) |
 
-Phase 3은 `create-expo-app`이 SDK 57을 생성하는데 이 앱이 54라서 중단했다. kit이 검증된 실제 앱에서 먼저 업그레이드를 실증한 뒤 스타터를 만든다. 자세한 사정은 `docs/sdk-upgrade-54-to-57.md`에 있다.
+SDK 57 업그레이드의 결과와 걸린 문제는 `docs/sdk-upgrade-54-to-57.md`에 기록했다. 스타터에 반영해야 할 것 3가지:
+
+- `tsconfig.json` 에 `"types": ["jest", "node"]` - TypeScript 6 은 `@types` 를 자동 포함하지 않는다
+- `react-native-google-mobile-ads` 는 `16.3.4` 고정 - GMA SDK 25.4.0 이 Kotlin 2.3 컴파일이고 RN 0.86 은 Kotlin 2.1.20 이다. SDK 57 에서도 제약이 남았다
+- CI `node-version: 22` - RN 0.86 의 `engines` 하한이 `^20.19.4` 다
 
 ## kit 설계 원칙
 
@@ -80,6 +84,23 @@ kit 테스트는 앱 코드 없이 독립 실행된다 (`npx jest kit`). 이것�
 
 - `app-ads.txt` - 게시자 계정에 묶이므로 앱을 몇 개 내든 파일 하나로 커버된다
 - Play 개인 개발자 계정의 비공개 테스트 요건 - 계정 단위 1회성 관문으로 보인다. 다만 신규 앱을 프로덕션에 올릴 때도 없는지는 미확인이다
+
+## kit 역전파 대기 (2026-08-20)
+
+스타터 복제 방식이라 개선이 기존 앱에 자동으로 퍼지지 않는다. 지금 밀려 있는 것:
+
+- `kit/chart/ThemedLineChart.tsx` 의 `extraSeries` / `legend` / `hideDots` - loan-calculator 의 방식별 비교 차트를 위해 추가했고 `microapp-starter` 에는 반영했다. **TSLA4Tesla 의 `kit/` 에는 아직 없다.** 기존 단일 계열 사용법은 그대로 동작하므로 급하지 않다
+
+드리프트가 실제로 아파지는 시점(체감상 앱 3-4개)에 공용 패키지로 승격하는 것이 원래 계획이다. 이 목록이 길어지는 속도가 그 시점을 알려준다.
+
+## 로컬 저장소 위치 (2026-08-20)
+
+GitHub 저장소가 아직 없어 로컬에만 있다.
+
+| 저장소 | 경로 | 브랜치 |
+|---|---|---|
+| `microapp-starter` | `C:/JaejoonHan/01_Repositories/microapp-starter` | `main` |
+| `loan-calculator` | `C:/JaejoonHan/01_Repositories/loan-calculator` | `main` |
 
 ## 참고 문서
 

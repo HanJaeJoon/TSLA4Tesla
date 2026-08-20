@@ -200,9 +200,18 @@ export default function HomeScreen() {
   }, []);
 
   // 컴포넌트 마운트 시 주가/환율 자동 조회 (실패해도 Alert 없이 배너로 안내)
+  // 이펙트 본문에서 곧바로 호출하면 로딩 플래그 setState 가 커밋 중에 실행돼
+  // 연쇄 렌더가 된다. 마이크로태스크로 미뤄 커밋 이후에 시작한다.
   useEffect(() => {
-    fetchStockPrice(false);
-    fetchExchangeRate();
+    let cancelled = false;
+    Promise.resolve().then(() => {
+      if (cancelled) return;
+      fetchStockPrice(false);
+      fetchExchangeRate();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [fetchStockPrice, fetchExchangeRate]);
 
   // 저장된 입력값 복원
@@ -227,14 +236,6 @@ export default function HomeScreen() {
     if (!hydrated) return;
     saveInputs({ stockCount, vehicle: selectedVehicle, trimPrice: selectedTrimPrice });
   }, [hydrated, stockCount, selectedVehicle, selectedTrimPrice]);
-
-  // 차량 변경으로 현재 트림이 목록에 없으면 첫 번째 트림으로 이동
-  useEffect(() => {
-    const trims = TESLA_VEHICLES[selectedVehicle];
-    if (!trims.some((t) => t.value === selectedTrimPrice)) {
-      setSelectedTrimPrice(trims[0].value);
-    }
-  }, [selectedVehicle, selectedTrimPrice]);
 
   const onPullToRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -454,9 +455,14 @@ export default function HomeScreen() {
           <View style={styles.pickerContainer}>
             <Picker
               selectedValue={selectedVehicle}
-              onValueChange={(itemValue: keyof typeof TESLA_VEHICLES) =>
-                setSelectedVehicle(itemValue)
-              }
+              onValueChange={(itemValue: keyof typeof TESLA_VEHICLES) => {
+                setSelectedVehicle(itemValue);
+                // 새 차량에 현재 트림 가격이 없으면 첫 번째 트림으로 이동
+                const trims = TESLA_VEHICLES[itemValue];
+                if (!trims.some((t) => t.value === selectedTrimPrice)) {
+                  setSelectedTrimPrice(trims[0].value);
+                }
+              }}
               style={styles.picker}
               dropdownIconColor={colors.subtext}
             >
