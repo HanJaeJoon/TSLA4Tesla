@@ -73,21 +73,47 @@ kit 테스트는 앱 코드 없이 독립 실행된다 (`npx jest kit`). 이것�
 앱마다 필요한 것:
 
 - 키스토어 생성 + GitHub Secrets 4개 등록 (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`)
-- 워크플로의 `EXPECTED_UPLOAD_CERT_SHA256`을 해당 앱의 업로드 키 지문으로 교체
+- 워크플로의 `EXPECTED_UPLOAD_CERT_SHA256`을 해당 앱의 업로드 키 지문으로 교체.
+  **첫 업로드를 기다릴 필요가 없다.** Play 가 보여주는 업로드 키 인증서는 우리가 만든
+  self-signed 인증서 그 자체이므로, 키스토어를 만든 직후 `keytool -list -v` 의 SHA-256 을
+  넣으면 된다. 그러면 첫 빌드부터 서명 검증이 걸린다
 - AdMob에 앱 추가 + 배너 광고 단위 생성
-- **Play 스토어 등록정보 > 웹사이트에 도메인 입력.** AdMob이 앱별 등록정보의 도메인을 크롤링하므로 빠뜨리면 앱 인증이 실패한다
+- **Play 스토어 설정 > 웹사이트에 도메인 입력.** AdMob이 앱별 등록정보의 도메인을 크롤링하므로 빠뜨리면 앱 인증이 실패한다.
+  스토어 등록정보 페이지가 아니라 `앱 정보 > 스토어 설정`의 "스토어 등록정보 연락처 세부정보"에 있다.
+  같은 곳의 지원 이메일이 필수라서 그것도 채워야 저장된다.
+  **이 경로는 TSLA4Tesla 로 실증됐다** (2026-08-20 AdMob 앱 인증 통과, `docs/release-checklist-v1.4.0.md`)
 - 앱 콘텐츠 선언 (광고 ID / 광고 포함 / 데이터 보안), IARC 등급
 - 출시 후 `git tag vc<N>` - versionCode 가드의 기준값
 - main에서 빌드 1회 - Gradle 캐시는 저장소별이며 기본 브랜치에서만 저장된다
 
 계정 단위라 재작업이 불필요한 것:
 
-- `app-ads.txt` - 게시자 계정에 묶이므로 앱을 몇 개 내든 파일 하나로 커버된다
+- `app-ads.txt` - 게시자 계정에 묶이므로 앱을 몇 개 내든 파일 하나로 커버된다.
+  앱마다 해야 하는 일은 위의 웹사이트 필드 하나뿐이다
 - Play 개인 개발자 계정의 비공개 테스트 요건 - 계정 단위 1회성 관문으로 보인다. 다만 신규 앱을 프로덕션에 올릴 때도 없는지는 미확인이다
 
 ## kit 역전파 대기 (2026-08-20)
 
 스타터 복제 방식이라 개선이 기존 앱에 자동으로 퍼지지 않는다. 지금 밀려 있는 것:
+
+- **CI 의 npm 버전 고정** - `microapp-starter` 와 `TSLA4Tesla` 의 워크플로에 없다.
+  loan-calculator 첫 빌드가 `npm ci` 에서 12초 만에 죽었다. Node 22 번들 npm 10 과
+  개발 머신 npm 11 이 `@napi-rs/wasm-runtime` 의 peer dep(`@emnapi/core`,
+  `@emnapi/runtime`)을 최상위로 올리는 규칙이 달라서, npm 11 로 만든 lock 을
+  "package.json 과 동기화되지 않았다"며 거부한다. Windows 에서 `npm install` 이나
+  `npm install --package-lock-only` 를 돌려도 그 항목은 추가되지 않는다.
+  플랫폼 문제가 아니라 npm 버전 규칙 차이다.
+  해법은 `npm ci` 앞에 `npm i -g npm@11.6.2` 한 줄.
+
+  **TSLA4Tesla 는 지금 당장은 괜찮다.** lock 최상위에 `@emnapi/core@1.10.0` 이 있어
+  npm 10 이 만족한다. 하지만 그건 lock 을 어느 npm 이 썼는지에 달린 우연이므로,
+  lock 을 다시 만들면 같은 함정에 빠진다. 스타터에 넣어 두는 것이 맞다.
+
+- **`scripts/make-icons.py`** - loan-calculator 에만 있다. 아이콘 6개와 Play 용
+  512/1024x500 을 생성하며, 브랜드 색 상수 두 개(`BRAND`, `TINT`)만 바꾸면
+  다른 앱에 그대로 쓸 수 있다. `microapp-starter` 로 올릴 것.
+  주의: `PIL.ImageDraw` 는 알파를 합성하지 않고 픽셀을 덮어쓰므로, 반투명 요소는
+  요소별 레이어를 만들어 `alpha_composite` 해야 한다
 
 - `kit/chart/ThemedLineChart.tsx` 의 `extraSeries` / `legend` / `hideDots` - loan-calculator 의 방식별 비교 차트를 위해 추가했고 `microapp-starter` 에는 반영했다. **TSLA4Tesla 의 `kit/` 에는 아직 없다.** 기존 단일 계열 사용법은 그대로 동작하므로 급하지 않다
 
