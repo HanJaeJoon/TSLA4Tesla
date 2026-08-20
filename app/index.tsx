@@ -39,6 +39,7 @@ import {
 import { decimateLabels } from '../kit/chart/decimateLabels';
 import AdBanner from '../kit/ads/AdBanner';
 import ShareCard from '../components/ShareCard';
+import { shareFileName } from '../lib/share-card';
 import { getSnapshotSeries, getSnapshotRate, MarketSnapshot } from '../lib/snapshot';
 import marketSnapshotJson from '../assets/data/market-snapshot.json';
 
@@ -350,7 +351,7 @@ export default function HomeScreen() {
     if (isSharing) return;
     setIsSharing(true);
     try {
-      await shareImage(await captureCard(shareCardRef));
+      await shareImage(await captureCard(shareCardRef, shareFileName()));
     } catch {
       Alert.alert(t('shareFailTitle'), t('shareFailBody'), [{ text: t('alertOk') }]);
     } finally {
@@ -366,7 +367,7 @@ export default function HomeScreen() {
     if (isSaving) return;
     setIsSaving(true);
     try {
-      const result = await saveImageToLibrary(await captureCard(shareCardRef));
+      const result = await saveImageToLibrary(await captureCard(shareCardRef, shareFileName()));
       if (result === 'denied') {
         Alert.alert(t('saveFailTitle'), t('savePermission'), [{ text: t('alertOk') }]);
         return;
