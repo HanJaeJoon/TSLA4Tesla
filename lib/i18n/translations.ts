@@ -187,7 +187,8 @@ const de: typeof en = {
   alertOk: 'OK',
   shareA11y: 'Ergebnis teilen',
   shareHeadline: {
-    one: 'Meine {{count}} TSLA-Aktie =',
+    // 단수는 소유격 + 숫자 1이 어색해 관사형으로 표기 (숫자 없음)
+    one: 'Meine TSLA-Aktie =',
     other: 'Meine {{count}} TSLA-Aktien =',
   },
   shareFailTitle: 'Teilen fehlgeschlagen',
@@ -237,7 +238,8 @@ const es: typeof en = {
   alertOk: 'OK',
   shareA11y: 'Compartir resultado',
   shareHeadline: {
-    one: 'Mi {{count}} acción de TSLA =',
+    // 단수는 소유격 + 숫자 1이 어색해 관사형으로 표기 (숫자 없음)
+    one: 'Mi acción de TSLA =',
     other: 'Mis {{count}} acciones de TSLA =',
   },
   shareFailTitle: 'Error al compartir',
