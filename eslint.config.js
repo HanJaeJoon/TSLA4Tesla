@@ -5,7 +5,8 @@ const expoConfig = require('eslint-config-expo/flat');
 module.exports = defineConfig([
   expoConfig,
   {
-    ignores: ['dist/*', 'android/*', 'ios/*'],
+    // .expo/ 는 expo start 가 만드는 gitignore 대상 산출물이다 (static-tmp/_error.js 등).
+    ignores: ['dist/*', 'android/*', 'ios/*', '.expo/**'],
   },
   {
     // kit은 앱을 모른다. 이 단방향 의존이 깨지면 kit을 별도 패키지로 승격할 수 없다.
