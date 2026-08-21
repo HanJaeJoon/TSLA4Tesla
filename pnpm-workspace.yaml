@@ -1,0 +1,17 @@
+# pnpm 11 부터 nodeLinker 등 핵심 설정은 .npmrc 가 아니라 이 파일에 둔다.
+# isolated 설치는 react-native-google-mobile-ads / view-shot / chart-kit 이
+# 호환되지 않을 수 있어 hoisted 로 시작한다 (Expo 공식 가이드의 안전한 기본값).
+nodeLinker: hoisted
+
+# 빌드(postinstall) 스크립트는 기본 차단이라 필요한 것만 허용한다.
+# unrs-resolver 는 eslint-config-expo 가 끌어오며 플랫폼 바인딩을 검증한다.
+allowBuilds:
+  unrs-resolver: true
+
+# 보안 픽스 강제 (npm 시절 package.json overrides 에서 이관).
+# pnpm 11 은 package.json 의 pnpm 필드(pnpm.overrides)를 읽지 않으므로 반드시 여기 둔다.
+# xcode 의 uuid 만 중첩 오버라이드 문법(부모>자식)을 쓴다.
+overrides:
+  '@tootallnate/once': ^3.0.1
+  postcss: '>=8.5.23 <9'
+  xcode>uuid: ^11.1.1

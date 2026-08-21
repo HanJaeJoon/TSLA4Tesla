@@ -14,16 +14,16 @@
 ## 개발
 
 ```bash
-npm install        # 의존성 설치
-npx expo start     # 개발 서버 실행 (Expo Go 에서는 광고 배너가 나오지 않음)
+pnpm install       # 의존성 설치
+pnpm expo start    # 개발 서버 실행 (Expo Go 에서는 광고 배너가 나오지 않음)
 ```
 
 검증 명령 (완료 기준은 세 개 모두 통과):
 
 ```bash
-npm run typecheck  # tsc --noEmit (strict)
-npm run test:ci    # Jest 1회 실행
-npm run lint       # ESLint (kit 단방향 의존 규칙 포함)
+pnpm run typecheck  # tsc --noEmit (strict)
+pnpm run test:ci    # Jest 1회 실행
+pnpm run lint       # ESLint (kit 단방향 의존 규칙 포함)
 ```
 
 ## 디렉터리 구조

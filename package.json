@@ -2,6 +2,7 @@
   "name": "TSLA4Tesla",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "packageManager": "pnpm@11.9.0",
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
@@ -61,12 +62,5 @@
     "react-test-renderer": "19.1.0",
     "typescript": "~6.0.3"
   },
-  "private": true,
-  "overrides": {
-    "@tootallnate/once": "^3.0.1",
-    "postcss": ">=8.5.23 <9",
-    "xcode": {
-      "uuid": "^11.1.1"
-    }
-  }
+  "private": true
 }

@@ -61,15 +61,18 @@ Expo SDK 57 / expo-router / TypeScript strict, AdMob 배너 수익형. Play 프�
 
 ## 패키지 매니저
 
-- **npm 을 유지한다.** pnpm 전환은 출시 후에 판단할 일이며 지금 건드리지 않는다
-- 의존성은 가능하면 `npx expo install` 로 다룬다
-- **Windows 에서 `npm install <개별 패키지>` 를 실행한 뒤에는 락파일을 확인할 것.**
-  개별 설치가 `unrs-resolver` 의 optional 바인딩이 요구하는 `@emnapi/*` 를 락파일에서
-  지워, Linux CI 의 `npm ci` 가 EUSAGE 로 거부한다. `package-lock.json` 에
-  `node_modules/@emnapi/core` 와 `node_modules/@emnapi/runtime` 이 **최상위에 2건**
-  있고 `wasm32-wasi` 아래 **중첩이 0건**인지 본다. 어긋나면 `npm install` 재실행으로는
-  고쳐지지 않고 `node_modules` 와 `package-lock.json` 을 둘 다 지우고 처음부터 설치해야
-  한다
+- **pnpm 을 쓴다** (`packageManager: pnpm@11.9.0`, npm 에서 전환 완료).
+  `npm install` / `npm ci` 를 쓰지 말 것. 락파일은 `pnpm-lock.yaml` 이다
+- pnpm 11 의 핵심 설정은 `.npmrc` 나 `package.json` 의 `pnpm` 필드가 아니라
+  **`pnpm-workspace.yaml`** 에 둔다. 여기에 `nodeLinker: hoisted`(네이티브 모듈 호환),
+  `allowBuilds`, 보안 `overrides` 가 있다. `package.json` 의 `pnpm.overrides` 는
+  pnpm 11 이 **조용히 무시하므로** 쓰지 말 것
+- 설치 후 `node_modules/.pnpm` 에 패키지 디렉터리가 생기면 isolated 로 설치된 것이다.
+  hoisted 가 적용되면 `.pnpm` 에는 내부 상태 파일(lock.yaml)만 있다
+- npm 시절의 `@emnapi/*` 락파일 규율은 pnpm 에서는 불필요하다. pnpm-lock.yaml 은
+  플랫폼 무관하게 optional 의존(`@emnapi/core`, `@emnapi/runtime`)을 기록하므로
+  Windows 에서 개별 설치해도 Linux CI 가 깨지지 않는다 (전환 목적이 이것이다)
+- 의존성은 가능하면 `pnpm expo install` 로 다룬다
 - SDK 메이저 업그레이드에서는 락파일을 재생성한다. 기존 락파일 위에
   `expo install --fix` 를 돌리면 `expo-modules-core` 등이 중첩 설치돼 테스트와
   `expo prebuild` 가 함께 깨진다
@@ -87,12 +90,12 @@ Expo SDK 57 / expo-router / TypeScript strict, AdMob 배너 수익형. Play 프�
 
 | 명령 | 하는 일 |
 |---|---|
-| `npm run typecheck` | `tsc --noEmit` (strict) |
-| `npm run test:ci` | Jest 1회 |
-| `npm run lint` | ESLint (kit 단방향 의존 규칙 포함) |
-| `npx jest kit` | kit 테스트만 (경계 확인) |
+| `pnpm run typecheck` | `tsc --noEmit` (strict) |
+| `pnpm run test:ci` | Jest 1회 |
+| `pnpm run lint` | ESLint (kit 단방향 의존 규칙 포함) |
+| `pnpm jest kit` | kit 테스트만 (경계 확인) |
 
-**완료 기준은 `npm run typecheck && npm run test:ci && npm run lint` 통과다.**
+**완료 기준은 `pnpm run typecheck && pnpm run test:ci && pnpm run lint` 통과다.**
 완료를 주장하기 전에 실제로 돌리고 출력을 확인한다. CI 도 이 셋을 네이티브 빌드보다
 앞에 두고 있다(빌드 1회가 25분).
 
