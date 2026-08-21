@@ -3,6 +3,7 @@ import {
   formatApproxConverted,
   formatKrwApprox,
   formatCurrency,
+  formatDecimal,
 } from '../currency';
 
 describe('resolveTargetCurrency', () => {
@@ -70,6 +71,30 @@ describe('formatKrwApprox', () => {
   it('만 단위 반올림이 1억이 되면 억 단위로 표시한다', () => {
     // 71942 * 1390 = 99,999,380 -> 9,999.938만 -> "10,000만 원"이 아니라 "1억 원"
     expect(formatKrwApprox(71942, 1390)).toBe('약 1억 원');
+  });
+});
+
+describe('formatDecimal', () => {
+  it('지원하는 6개 locale 전부에서 해당 locale의 소수 구분자를 쓴다', () => {
+    // 점(.) 소수 구분자 locale
+    expect(formatDecimal(110.94, 'en', 1)).toBe('110.9');
+    expect(formatDecimal(110.94, 'ko', 1)).toBe('110.9');
+    expect(formatDecimal(110.94, 'ja', 1)).toBe('110.9');
+    expect(formatDecimal(110.94, 'zh', 1)).toBe('110.9');
+    // 쉼표(,) 소수 구분자 locale
+    expect(formatDecimal(110.94, 'de', 1)).toBe('110,9');
+    expect(formatDecimal(110.94, 'es', 1)).toBe('110,9');
+  });
+
+  it('소수 자릿수를 고정한다 (부족분 반올림/초과분 절사)', () => {
+    expect(formatDecimal(2.5, 'en', 2)).toBe('2.50');
+    expect(formatDecimal(2.945, 'de', 2)).toBe('2,95');
+    expect(formatDecimal(3, 'es', 1)).toBe('3,0');
+  });
+
+  it('천 단위 구분자도 locale 표기법을 따른다', () => {
+    expect(formatDecimal(1234.5, 'en', 1)).toBe('1,234.5');
+    expect(formatDecimal(1234.5, 'de', 1)).toBe('1.234,5');
   });
 });
 

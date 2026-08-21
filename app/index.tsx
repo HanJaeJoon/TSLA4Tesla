@@ -25,7 +25,12 @@ import {
   ChartPeriod,
   StockCountError,
 } from '../lib/calculator';
-import { resolveTargetCurrency, formatApproxConverted, formatCurrency } from '../kit/currency';
+import {
+  resolveTargetCurrency,
+  formatApproxConverted,
+  formatCurrency,
+  formatDecimal,
+} from '../kit/currency';
 import { t, appLocale, deviceCurrencyCode } from '../lib/i18n';
 import { saveInputs, loadInputs } from '../lib/preferences';
 import { useThemeColors, ThemeColors } from '../kit/theme';
@@ -553,7 +558,7 @@ export default function HomeScreen() {
                 {t('carsCountLabel')}
               </Text>
               <Text style={styles.mainResultValue}>
-                {t('carsCount', { n: result.numberOfCars.toFixed(2) })}
+                {t('carsCount', { n: formatDecimal(result.numberOfCars, appLocale, 2) })}
               </Text>
             </View>
 
@@ -563,7 +568,7 @@ export default function HomeScreen() {
               </Text>
               <Text style={styles.resultValue}>
                 {t('shortfall', {
-                  shares: result.shortfall.neededShares.toFixed(1),
+                  shares: formatDecimal(result.shortfall.neededShares, appLocale, 1),
                   value: formatCurrency(result.shortfall.neededValue, appLocale),
                 })}
               </Text>
@@ -640,14 +645,14 @@ export default function HomeScreen() {
           <ShareCard
             ref={shareCardRef}
             headline={t('shareHeadline', { count: result.stockCountNum })}
-            carsText={t('carsCount', { n: result.numberOfCars.toFixed(2) })}
+            carsText={t('carsCount', { n: formatDecimal(result.numberOfCars, appLocale, 2) })}
             model={result.selectedModel}
             vehicle={result.vehicle}
             totalValueLabel={t('totalValueLabel')}
             totalValueText={formatCurrency(result.totalValue, appLocale)}
             nextTargetText={t('nextTargetLabel', { count: result.shortfall.targetCars })}
             shortfallText={t('shortfall', {
-              shares: result.shortfall.neededShares.toFixed(1),
+              shares: formatDecimal(result.shortfall.neededShares, appLocale, 1),
               value: formatCurrency(result.shortfall.neededValue, appLocale),
             })}
             asOfText={t('asOf', { time: lastUpdated })}

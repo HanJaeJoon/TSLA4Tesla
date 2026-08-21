@@ -21,6 +21,18 @@ export function formatCurrency(
   }).format(amount);
 }
 
+// 소수 자릿수를 고정해 locale 표기법으로 숫자를 표시한다 (예: en 110.9 / de 110,9).
+export function formatDecimal(
+  value: number,
+  locale: string,
+  fractionDigits: number
+): string {
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  }).format(value);
+}
+
 // 원화는 만/억 단위 근사 표기가 관용적이다.
 export function formatKrwApprox(usd: number, usdKrwRate: number): string {
   const krw = usd * usdKrwRate;
