@@ -1,50 +1,47 @@
-# Welcome to your Expo app 👋
+# TSLA4Tesla
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+보유한 TSLA 주식으로 테슬라 차를 몇 대 살 수 있는지 계산해 보여주는 단일 화면 모바일 앱이다.
+보유 주식 수를 입력하고 차량 모델/트림(Model 3 / Model Y / Model S / Model X / Cybertruck)을
+고르면, Yahoo Finance 에서 조회한 현재 주가로 구매 가능 대수와 다음 한 대까지의 부족분을
+계산해 보여준다. 네트워크 실패 시에는 번들된 오프라인 스냅샷 데이터(`assets/data/market-snapshot.json`)로
+대체(fallback)한다.
 
-## Get started
+주가 추이 차트(1M / 6M / 1Y / 5Y), 결과 공유 카드(이미지 캡처 -> 공유/갤러리 저장),
+기기 지역 통화 환산 표시, 6개 로케일(en, ko, ja, de, es, zh) i18n, AdMob 배너 광고를
+포함한다. Expo SDK 57 / expo-router / TypeScript strict 기반이며 Google Play 에
+프로덕션 출시되어 있다 (`com.hanjaejoon.TSLA4Tesla`).
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-    npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## 개발
 
 ```bash
-npm run reset-project
+npm install        # 의존성 설치
+npx expo start     # 개발 서버 실행 (Expo Go 에서는 광고 배너가 나오지 않음)
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+검증 명령 (완료 기준은 세 개 모두 통과):
 
-## Learn more
+```bash
+npm run typecheck  # tsc --noEmit (strict)
+npm run test:ci    # Jest 1회 실행
+npm run lint       # ESLint (kit 단방향 의존 규칙 포함)
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## 디렉터리 구조
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- `app/` - expo-router 화면. `app/index.tsx` 가 사실상 앱 전체다.
+  차량 모델/트림 가격표, 광고 단위 ID, Yahoo Finance 조회가 여기 있다
+- `lib/` - 앱 도메인 로직. `calculator.ts`(순수 계산), `snapshot.ts`(번들 fallback 데이터
+  해석), `i18n/`(번역), `preferences.ts`(입력값 저장), `share-card.ts`
+- `kit/` - 앱 도메인과 무관한 재사용 모듈 (다른 마이크로앱과 공유). 광고, 차트, 통화,
+  테마, 공유 캡처 등. `kit/` 은 `app/`, `lib/`, `components/` 를 import 하지 않는다
+  (ESLint 로 강제). 규칙은 `kit/README.md` 참조
+- `components/ShareCard.tsx` - 공유 카드 본문
+- `assets/data/market-snapshot.json` - 오프라인 fallback 데이터.
+  손으로 고치지 말고 `node scripts/update-market-snapshot.js` 로 갱신한다
+- `docs/` - SDK 업그레이드 기록, 출시 체크리스트, 스토어 등록정보
 
-## Join the community
+## 빌드 / 배포
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+안드로이드 AAB 빌드는 GitHub Actions 워크플로를 `workflow_dispatch` 로 수동 실행해서
+만든다. push 만으로는 빌드/업로드가 일어나지 않는다. 출시 절차와 `versionCode` 규칙은
+`docs/release-checklist-v1.4.0.md` 와 `CLAUDE.md` 를 참조한다.
