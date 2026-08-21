@@ -623,6 +623,7 @@ export default function HomeScreen() {
                     values={historyData.values}
                     width={SCREEN_WIDTH - 80}
                     yAxisSuffix={t('chartYAxisSuffix')}
+                    locale={appLocale}
                     brandColor={BRAND_RED}
                     colors={colors}
                     style={styles.chart}
