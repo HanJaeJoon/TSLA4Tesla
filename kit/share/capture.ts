@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
-import * as MediaLibrary from 'expo-media-library';
+import { Asset, requestPermissionsAsync } from 'expo-media-library';
 import { File, Paths } from 'expo-file-system';
 
 // 공유 시트를 지원하는 환경인지 (웹 일부/시뮬레이터에서 미지원)
@@ -35,9 +35,12 @@ export async function shareImage(uri: string): Promise<void> {
 }
 
 // 권한이 거부되면 'denied'를 반환한다. 사용자 안내 문구는 앱이 번역해 표시한다.
+// SDK 57: 함수형 saveToLibraryAsync는 메인 엔트리에서 즉시 throw 하는 스텁이 됐다.
+// 새 클래스 API Asset.create()를 쓴다. Android 네이티브 구현이 filePath.toFile()을
+// 쓰므로 인자는 file:// 스킴 URI여야 한다 (captureCard가 file:// 로 정규화해 반환).
 export async function saveImageToLibrary(uri: string): Promise<'saved' | 'denied'> {
-  const { granted } = await MediaLibrary.requestPermissionsAsync(true);
+  const { granted } = await requestPermissionsAsync(true);
   if (!granted) return 'denied';
-  await MediaLibrary.saveToLibraryAsync(uri);
+  await Asset.create(uri);
   return 'saved';
 }

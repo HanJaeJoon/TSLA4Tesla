@@ -28,7 +28,7 @@
 
 `expo` 는 `~57.0.14` 로 고정했다. `expo install --fix` 가 남긴 `^57` 은 범위가 너무 넓다.
 
-## 걸린 문제 4가지와 처리
+## 걸린 문제 6가지와 처리
 
 ### 1. TypeScript 6 은 `node_modules/@types` 를 자동 포함하지 않는다
 
@@ -113,6 +113,24 @@ CI 의 `npm ci` 가 2초 만에 EUSAGE 로 두 번 실패했다.
 2. 락파일에 `node_modules/@emnapi/core` 와 `node_modules/@emnapi/runtime` 이 **최상위로** 있는지. 중첩되어 있거나 없으면 클린 재생성이 필요하다
 
 빠르게 실패하므로(2초) CI 가 사실상의 감시자다. 다만 원인이 락파일 레이아웃이라는 것을 모르면 진단이 오래 걸린다.
+
+### 6. expo-media-library 57 은 함수형 API를 legacy 엔트리로 옮겼다 (이미지 저장 회귀)
+
+업그레이드 후 이미지 저장이 항상 실패했다. expo-media-library 57 이 함수형 API를 통째로 `expo-media-library/legacy` 로 옮기고, 메인 엔트리의 `saveToLibraryAsync` / `createAssetAsync` 등은 **호출 즉시 throw 하는 deprecated 스텁**으로 바꿨기 때문이다. import 와 타입 시그니처는 그대로라 typecheck / lint 로는 잡히지 않고 런타임에서만 드러난다.
+
+legacy 엔트리로 우회하는 대신 새 클래스 API로 마이그레이션했다 (`kit/share/capture.ts`).
+
+```ts
+// 이전 (57 메인 엔트리에서 즉시 throw)
+await MediaLibrary.saveToLibraryAsync(uri);
+// 이후
+await Asset.create(uri);
+```
+
+함께 알아야 할 변경 두 가지:
+
+- **권한 semantics 가 바뀌었다.** 새 `requestPermissionsAsync(writeOnly)` 는 Android 13+ 에서 쓰기 권한이 시스템상 불필요해 **프롬프트 없이 granted 를 반환한다**. 권한 거부('denied') 분기는 Android 12 이하와 iOS 에서만 실제로 탄다
+- **`file://` 스킴이 필수다.** Android 네이티브 구현이 `filePath.toFile()` 을 쓰므로 `Asset.create()` 인자는 file:// 스킴 URI여야 한다. `captureCard` 가 이미 file:// 로 정규화해 반환하므로 호출부 변경은 없다
 
 ## 검증
 
