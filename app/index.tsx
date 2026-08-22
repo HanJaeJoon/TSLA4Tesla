@@ -451,6 +451,8 @@ export default function HomeScreen() {
             onChangeText={(text) => {
               setStockCount(text);
               setError('');
+              // 입력이 바뀌면 이전 계산 결과는 더 이상 유효하지 않으므로 결과 섹션을 숨긴다
+              setResult(null);
             }}
           />
           {error ? <Text style={styles.errorText}>{t(`errors.${error}`)}</Text> : null}
@@ -462,6 +464,8 @@ export default function HomeScreen() {
             <Picker
               selectedValue={selectedVehicle}
               onValueChange={(itemValue: keyof typeof TESLA_VEHICLES) => {
+                // 실제 값이 바뀔 때만 결과를 초기화 (같은 항목 재선택은 유지)
+                if (itemValue !== selectedVehicle) setResult(null);
                 setSelectedVehicle(itemValue);
                 // 새 차량에 현재 트림 가격이 없으면 첫 번째 트림으로 이동
                 const trims = TESLA_VEHICLES[itemValue];
@@ -484,7 +488,11 @@ export default function HomeScreen() {
           <View style={styles.pickerContainer}>
             <Picker
               selectedValue={selectedTrimPrice}
-              onValueChange={(itemValue: number) => setSelectedTrimPrice(itemValue)}
+              onValueChange={(itemValue: number) => {
+                // 실제 값이 바뀔 때만 결과를 초기화 (같은 항목 재선택은 유지)
+                if (itemValue !== selectedTrimPrice) setResult(null);
+                setSelectedTrimPrice(itemValue);
+              }}
               style={styles.picker}
               dropdownIconColor={colors.subtext}
             >
