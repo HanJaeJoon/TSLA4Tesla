@@ -157,6 +157,8 @@ export default function HomeScreen() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
   const priceFetchInFlight = useRef(false);
+  // fetch 콜백에서 직전 가격과 비교하기 위한 미러 (useCallback([]) 클로저의 stockPrice 는 stale)
+  const stockPriceRef = useRef(SNAPSHOT.price);
 
   // 실시간 주가 가져오기. 수동 새로고침일 때만 실패 Alert 표시
   const fetchStockPrice = useCallback(async (alertOnError: boolean) => {
@@ -172,6 +174,9 @@ export default function HomeScreen() {
       if (!currentPrice) {
         throw new Error('가격 정보를 가져올 수 없습니다');
       }
+      // 시세가 실제로 바뀌면 이전 계산 결과는 더 이상 유효하지 않으므로 결과 섹션을 숨긴다
+      if (currentPrice !== stockPriceRef.current) setResult(null);
+      stockPriceRef.current = currentPrice;
       setStockPrice(currentPrice);
       setPriceStatus('live');
       setLastUpdated(formatDateTime(new Date()));
