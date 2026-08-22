@@ -5,7 +5,11 @@
 // 여러 계열을 겹치면 색이 흐려져 구분이 어렵다. 하한을 둔다.
 export const MIN_STROKE_OPACITY = 0.9;
 
-export type ChartSeries = { values: number[]; color: string };
+export type ChartSeries = {
+  values: number[];
+  /** `#RRGGBB` */
+  color: string;
+};
 
 export type ChartDataset = {
   data: number[];
@@ -33,11 +37,30 @@ export function buildChartDatasets(
   ];
 }
 
-// #RRGGBB -> rgba(r, g, b, a)
+/**
+ * chart-kit 의 renderLegend 는 datasets[i] 색을 쓰므로
+ * legend 가 dataset 수보다 길면 런타임 예외가 난다.
+ * LineChart 에 넘기기 전에 호출한다.
+ */
+export function assertLegendLength(
+  legend: string[] | undefined,
+  extraSeries?: ChartSeries[]
+): void {
+  const datasetCount = 1 + (extraSeries?.length ?? 0);
+  if (legend != null && legend.length > datasetCount) {
+    throw new Error('ThemedLineChart: legend length exceeds dataset count');
+  }
+}
+
+/**
+ * `#RRGGBB` 만 받는다. `#RGB`, `#RRGGBBAA`, `#` 없는 값은 throw.
+ */
 export function hexToRgba(hex: string, opacity: number): string {
-  const value = hex.replace('#', '');
-  const r = parseInt(value.slice(0, 2), 16);
-  const g = parseInt(value.slice(2, 4), 16);
-  const b = parseInt(value.slice(4, 6), 16);
+  if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+    throw new Error(`hexToRgba: expected #RRGGBB, got ${JSON.stringify(hex)}`);
+  }
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
   return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }

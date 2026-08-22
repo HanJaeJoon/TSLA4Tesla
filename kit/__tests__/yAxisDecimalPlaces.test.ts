@@ -33,6 +33,19 @@ describe('yAxisDecimalPlaces', () => {
     expect(yAxisDecimalPlaces([NaN, Infinity])).toBe(1);
   });
 
+  it('주 계열과 extraSeries를 합친 배열을 넘기면 전 계열 범위로 자릿수를 고른다', () => {
+    // ThemedLineChart 호출측: [...values, ...extraSeries.flatMap((s) => s.values)]
+    const primaryFlat = [5, 5, 5];
+    const extraTight = [5.001, 5.002, 5.003];
+    expect(yAxisDecimalPlaces(primaryFlat)).toBe(1);
+    expect(yAxisDecimalPlaces([...primaryFlat, ...extraTight])).toBe(4);
+
+    const primaryZero = [0, 0, 0];
+    const extraSmall = [0.006, 0.009, 0.012];
+    expect(yAxisDecimalPlaces(primaryZero)).toBe(1);
+    expect(yAxisDecimalPlaces([...primaryZero, ...extraSmall])).toBe(3);
+  });
+
   it('formatDecimal과 함께 쓰면 de/es 라벨은 쉼표 소수 구분자로 나온다', () => {
     const values = [0.006, 0.009, 0.012];
     const digits = yAxisDecimalPlaces(values);

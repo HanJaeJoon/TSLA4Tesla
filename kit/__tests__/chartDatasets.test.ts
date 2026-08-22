@@ -1,4 +1,9 @@
-import { buildChartDatasets, hexToRgba, MIN_STROKE_OPACITY } from '../chart/chartDatasets';
+import {
+  assertLegendLength,
+  buildChartDatasets,
+  hexToRgba,
+  MIN_STROKE_OPACITY,
+} from '../chart/chartDatasets';
 
 describe('buildChartDatasets', () => {
   it('extraSeries가 없으면 주 계열 하나만 만든다', () => {
@@ -46,5 +51,31 @@ describe('hexToRgba', () => {
   it('#RRGGBB를 rgba 표기로 바꾼다', () => {
     expect(hexToRgba('#000000', 0.5)).toBe('rgba(0, 0, 0, 0.5)');
     expect(hexToRgba('#FFFFFF', 1)).toBe('rgba(255, 255, 255, 1)');
+  });
+
+  it('#RRGGBB가 아니면 throw한다', () => {
+    expect(() => hexToRgba('E82127', 1)).toThrow(/expected #RRGGBB/);
+    expect(() => hexToRgba('#FFF', 1)).toThrow(/expected #RRGGBB/);
+    expect(() => hexToRgba('#FFFFFFF', 1)).toThrow(/expected #RRGGBB/);
+    expect(() => hexToRgba('#GGGGGG', 1)).toThrow(/expected #RRGGBB/);
+    expect(() => hexToRgba('', 1)).toThrow(/expected #RRGGBB/);
+  });
+});
+
+describe('assertLegendLength', () => {
+  it('legend가 없거나 dataset 수 이하면 통과한다', () => {
+    expect(() => assertLegendLength(undefined)).not.toThrow();
+    expect(() => assertLegendLength([])).not.toThrow();
+    expect(() => assertLegendLength(['주'])).not.toThrow();
+    expect(() => assertLegendLength(['주', '추가'], [{ values: [1], color: '#00AA00' }])).not.toThrow();
+  });
+
+  it('legend가 dataset 수보다 길면 throw한다', () => {
+    expect(() => assertLegendLength(['a', 'b'])).toThrow(
+      'ThemedLineChart: legend length exceeds dataset count'
+    );
+    expect(() =>
+      assertLegendLength(['a', 'b', 'c'], [{ values: [1], color: '#00AA00' }])
+    ).toThrow('ThemedLineChart: legend length exceeds dataset count');
   });
 });

@@ -3,7 +3,12 @@ import { ViewStyle } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { formatDecimal } from '../currency';
 import { ThemeColors } from '../theme';
-import { buildChartDatasets, ChartSeries, hexToRgba } from './chartDatasets';
+import {
+  assertLegendLength,
+  buildChartDatasets,
+  ChartSeries,
+  hexToRgba,
+} from './chartDatasets';
 import { yAxisDecimalPlaces } from './yAxisDecimalPlaces';
 
 export function ThemedLineChart(props: {
@@ -36,8 +41,14 @@ export function ThemedLineChart(props: {
   hideFill?: boolean;
 }) {
   const { colors, brandColor, locale } = props;
-  // 값 범위가 작을 때 Y축 라벨이 전부 0.0으로 뭉개지지 않도록 자릿수를 동적으로 정한다
-  const decimalPlaces = yAxisDecimalPlaces(props.values);
+  assertLegendLength(props.legend, props.extraSeries);
+  // chart-kit 은 Y축 min/max 를 전 계열 합집합으로 잡는다. 주 계열만 보면
+  // 주 계열 범위가 거칠고 실제 축 범위가 작을 때 라벨이 전부 0.0 으로 뭉개진다.
+  const allValues = [
+    ...props.values,
+    ...(props.extraSeries ?? []).flatMap((s) => s.values),
+  ];
+  const decimalPlaces = yAxisDecimalPlaces(allValues);
   const datasets = buildChartDatasets(props.values, brandColor, props.extraSeries);
   return (
     <LineChart
