@@ -43,6 +43,12 @@ import {
 } from '../kit/share/capture';
 import { decimateLabels } from '../kit/chart/decimateLabels';
 import AdBanner from '../kit/ads/AdBanner';
+import {
+  shouldRequestAds,
+  showPrivacyOptions,
+  useAdsConsentResult,
+  usePrivacyOptionsRequired,
+} from '../kit/ads/consent';
 import ShareCard from '../components/ShareCard';
 import { shareFileName } from '../lib/share-card';
 import { getSnapshotSeries, getSnapshotRate, MarketSnapshot } from '../lib/snapshot';
@@ -126,6 +132,9 @@ export default function HomeScreen() {
     dark: { bannerBg: '#3a2020' },
   });
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  // UMP 동의 판정 (ensureAdsConsent 는 app/_layout.tsx 에서 1회 호출한다)
+  const adsConsent = useAdsConsentResult();
+  const privacyOptionsRequired = usePrivacyOptionsRequired();
 
   const [stockCount, setStockCount] = useState('');
   const [selectedVehicle, setSelectedVehicle] = useState<keyof typeof TESLA_VEHICLES>('Model 3');
@@ -673,7 +682,18 @@ export default function HomeScreen() {
           />
         </View>
       )}
-      <AdBanner productionUnitId={BANNER_AD_UNIT_ID} />
+      {privacyOptionsRequired && (
+        <TouchableOpacity
+          style={styles.privacyOptionsButton}
+          onPress={() => {
+            void showPrivacyOptions();
+          }}
+          accessibilityRole="button"
+        >
+          <Text style={styles.privacyOptionsText}>{t('privacyOptions')}</Text>
+        </TouchableOpacity>
+      )}
+      <AdBanner productionUnitId={BANNER_AD_UNIT_ID} enabled={shouldRequestAds(adsConsent)} />
     </SafeAreaView>
   );
 }
@@ -970,5 +990,14 @@ const makeStyles = (colors: ThemeColors) =>
     legendText: {
       fontSize: 12,
       color: colors.subtext,
+    },
+    privacyOptionsButton: {
+      alignItems: 'center',
+      paddingVertical: 8,
+    },
+    privacyOptionsText: {
+      fontSize: 12,
+      color: colors.faint,
+      textDecorationLine: 'underline',
     },
   });

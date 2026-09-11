@@ -5,8 +5,17 @@ import Constants, { ExecutionEnvironment } from 'expo-constants';
 // Expo Go에는 AdMob 네이티브 모듈이 포함되어 있지 않아 광고를 띄울 수 없다 (EAS/Actions 빌드에서만 동작)
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
-export default function AdBanner({ productionUnitId }: { productionUnitId?: string }) {
-  if (isExpoGo) {
+// enabled: UMP 동의 판정이 끝나 광고를 요청해도 되는 상태인지.
+// 기본값 true 는 동의 흐름을 아직 붙이지 않은 앱의 기존 동작을 그대로 둔다.
+// EEA/UK 에 배포하는 앱은 kit/ads/consent 의 shouldRequestAds() 결과를 넘긴다.
+export default function AdBanner({
+  productionUnitId,
+  enabled = true,
+}: {
+  productionUnitId?: string;
+  enabled?: boolean;
+}) {
+  if (isExpoGo || !enabled) {
     return null;
   }
   return <NativeAdBanner productionUnitId={productionUnitId} />;

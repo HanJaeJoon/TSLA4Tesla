@@ -47,6 +47,7 @@ const en = {
   saveFailTitle: 'Save failed',
   saveFailBody: 'Could not save the image.',
   savePermission: 'Photo access permission is required to save the image.',
+  privacyOptions: 'Ad privacy settings',
   errors: {
     empty: 'Please enter your share count',
     invalid: 'Please enter a valid share count (positive number)',
@@ -97,6 +98,7 @@ const ko: typeof en = {
   saveFailTitle: '저장 실패',
   saveFailBody: '이미지를 저장하지 못했습니다.',
   savePermission: '이미지를 저장하려면 사진 접근 권한이 필요합니다.',
+  privacyOptions: '광고 개인 설정',
   errors: {
     empty: '주식 수를 입력해주세요',
     invalid: '유효한 주식 수를 입력해주세요 (양수)',
@@ -147,6 +149,7 @@ const ja: typeof en = {
   saveFailTitle: '保存に失敗',
   saveFailBody: '画像を保存できませんでした。',
   savePermission: '画像を保存するには写真へのアクセス許可が必要です。',
+  privacyOptions: '広告のプライバシー設定',
   errors: {
     empty: '株数を入力してください',
     invalid: '有効な株数を入力してください（正の数）',
@@ -199,6 +202,7 @@ const de: typeof en = {
   saveFailTitle: 'Speichern fehlgeschlagen',
   saveFailBody: 'Bild konnte nicht gespeichert werden.',
   savePermission: 'Zum Speichern wird Zugriff auf Fotos benötigt.',
+  privacyOptions: 'Datenschutz für Werbung',
   errors: {
     empty: 'Bitte Aktienanzahl eingeben',
     invalid: 'Bitte gültige Aktienanzahl eingeben (positive Zahl)',
@@ -250,6 +254,7 @@ const es: typeof en = {
   saveFailTitle: 'Error al guardar',
   saveFailBody: 'No se pudo guardar la imagen.',
   savePermission: 'Se necesita permiso de acceso a fotos para guardar la imagen.',
+  privacyOptions: 'Privacidad de anuncios',
   errors: {
     empty: 'Ingresa el número de acciones',
     invalid: 'Ingresa un número de acciones válido (positivo)',
@@ -300,6 +305,7 @@ const zh: typeof en = {
   saveFailTitle: '保存失败',
   saveFailBody: '无法保存图片。',
   savePermission: '保存图片需要照片访问权限。',
+  privacyOptions: '广告隐私设置',
   errors: {
     empty: '请输入股票数量',
     invalid: '请输入有效的股票数量（正数）',
