@@ -64,6 +64,9 @@ jobs:
           java-version: 17
 
       - uses: android-actions/setup-android@v3
+        with:
+          # 기본값 'tools platform-tools' 의 tools 는 cmdline-tools 16.0 에서 없어져 sdkmanager 가 실패한다 (2026-10-03)
+          packages: platform-tools
 
       - uses: gradle/actions/setup-gradle@v4
 
