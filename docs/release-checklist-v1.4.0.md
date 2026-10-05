@@ -18,7 +18,9 @@ v1.4.0 (vc6)이 프로덕션에 게시되었습니다.
 - AdMob 하단 배너 광고 (react-native-google-mobile-ads 16.3.4 고정 - 16.4.0은 Expo SDK 54의 Kotlin 2.1과 비호환)
 - 6개 언어 다국어 지원 (ko/en/ja/de/es/zh, 기기 언어 자동 감지) + 지역 통화 환산
 - 계산 결과 브랜드 카드 공유/갤러리 저장 (차량 실루엣 3종)
-- 의존성 취약점 수정 (image-size 2건은 패치 미출시로 보류 - 빌드 툴체인 전용)
+- 의존성 취약점 수정 (출시 당시 image-size 2건은 패치 미출시로 보류 - 빌드 툴체인 전용).
+  image-size 2.0.3/2.0.4는 2026-09-15(KST) npm에 올라왔고, 이후 커밋에서 pnpm overrides로
+  vendor/image-size(2.0.4 파서 + metro용 경로 인자 호환 래퍼)에 고정했다.
 
 ## 완료된 항목
 

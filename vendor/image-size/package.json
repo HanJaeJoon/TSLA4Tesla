@@ -1,0 +1,11 @@
+{
+  "name": "image-size",
+  "version": "2.0.4",
+  "private": true,
+  "description": "Metro-compatible wrapper around image-size 2.0.4 (accepts file path or buffer like 1.x).",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@image-size/core": "npm:image-size@2.0.4"
+  }
+}
