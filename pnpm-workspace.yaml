@@ -21,7 +21,7 @@ overrides:
   '@xmldom/xmldom@0.8': '>=0.8.15 <0.9'
   '@xmldom/xmldom@0.9': '>=0.9.12 <1'
   # Dependabot 공개 알림 (2026-10 canary). braces/node-forge 는 npm에 패치 버전이 없어 여기 넣지 않음.
-  # image-size: 1.2.1(metro) -> 2.0.4 파서. 2.x 는 경로 인자를 받지 않아 metro Assets.js 가 깨지므로
+  # image-size: 1.2.1(metro) 를 2.0.4 파서로. 2.x 는 경로 인자를 받지 않아 metro Assets.js 가 깨지므로
   # vendor/image-size 래퍼(경로면 readFileSync)로 바꾼다. 실제 파서는 @image-size/core(=npm image-size@2.0.4).
   # 패치(2.0.3+)는 2026-09-15(KST) npm 출시.
   image-size: file:./vendor/image-size
