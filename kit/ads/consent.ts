@@ -10,14 +10,12 @@ import { useSyncExternalStore } from 'react';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 
 import {
+  backoffMs,
   interpretConsentInfo,
   resolveConsentRequest,
-  retryDelayMs,
   shouldRetryConsent,
   unavailableConsent,
-  type AdsConsentInfoLike,
   type ConsentResult,
-  type DebugGeographyName,
   type EnsureAdsConsentOptions,
 } from './consentLogic';
 
@@ -35,34 +33,16 @@ const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreCl
 
 const DEFAULT_MAX_RETRIES = 2;
 
-type AdsConsentModule = {
-  requestInfoUpdate(options?: {
-    debugGeography?: number;
-    testDeviceIdentifiers?: string[];
-    tagForUnderAgeOfConsent?: boolean;
-  }): Promise<AdsConsentInfoLike>;
-  loadAndShowConsentFormIfRequired(): Promise<AdsConsentInfoLike>;
-  getConsentInfo(): Promise<AdsConsentInfoLike>;
-  showPrivacyOptionsForm(): Promise<AdsConsentInfoLike>;
-};
-
-type ConsentNativeApi = {
-  AdsConsent: AdsConsentModule;
-  debugGeographyValue(name: DebugGeographyName): number | undefined;
-};
+type GoogleMobileAds = typeof import('react-native-google-mobile-ads');
 
 // Expo Go 에서는 모듈을 로드하는 순간 크래시가 나므로 지연 require 한다
-function loadNative(): ConsentNativeApi | null {
+function loadNative(): GoogleMobileAds | null {
   if (isExpoGo) return null;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const ads = require('react-native-google-mobile-ads');
-    if (!ads?.AdsConsent) return null;
-    const geographies = ads.AdsConsentDebugGeography ?? {};
-    return {
-      AdsConsent: ads.AdsConsent as AdsConsentModule,
-      debugGeographyValue: (name) => geographies[name],
-    };
+    const ads =
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('react-native-google-mobile-ads') as GoogleMobileAds;
+    return ads.AdsConsent ? ads : null;
   } catch {
     return null;
   }
@@ -88,11 +68,6 @@ function subscribe(listener: () => void): () => void {
 }
 
 const getSnapshot = () => current;
-
-/** 마지막 동의 판정. 아직 판정 전이면 null */
-export function getAdsConsentResult(): ConsentResult | null {
-  return current;
-}
 
 /** 마지막 동의 판정을 구독한다. 아직 판정 전이면 null */
 export function useAdsConsentResult(): ConsentResult | null {
@@ -133,36 +108,31 @@ async function runConsentFlow(options?: EnsureAdsConsentOptions): Promise<Consen
   const native = loadNative();
   if (!native) return unavailableConsent('no-native-module');
 
-  const maxRetries = options?.maxRetries ?? DEFAULT_MAX_RETRIES;
   let attempt = 0;
   let result = unavailableConsent('error');
 
   while (true) {
     attempt += 1;
     result = await gatherOnce(native, options);
-    if (!shouldRetryConsent(result, attempt, maxRetries)) return result;
-    await sleep(retryDelayMs(attempt));
+    if (!shouldRetryConsent(result, attempt, DEFAULT_MAX_RETRIES)) return result;
+    await sleep(backoffMs(attempt, 1000, 8000));
   }
 }
 
 async function gatherOnce(
-  native: ConsentNativeApi,
+  native: GoogleMobileAds,
   options?: EnsureAdsConsentOptions
 ): Promise<ConsentResult> {
   try {
-    const resolved = resolveConsentRequest(options, __DEV__);
-    const debugGeography = resolved.debugGeography
-      ? native.debugGeographyValue(resolved.debugGeography)
+    // 이름('EEA')으로 받은 디버그 지역을 SDK 의 enum 값으로 바꿔 넘긴다
+    const { debugGeography: geography, ...resolved } = resolveConsentRequest(options, __DEV__);
+    const debugGeography = geography
+      ? native.AdsConsentDebugGeography[geography]
       : undefined;
 
     await native.AdsConsent.requestInfoUpdate({
+      ...resolved,
       ...(debugGeography === undefined ? {} : { debugGeography }),
-      ...(resolved.testDeviceIdentifiers
-        ? { testDeviceIdentifiers: resolved.testDeviceIdentifiers }
-        : {}),
-      ...(resolved.tagForUnderAgeOfConsent === undefined
-        ? {}
-        : { tagForUnderAgeOfConsent: resolved.tagForUnderAgeOfConsent }),
     });
 
     // 동의가 필요한 상태일 때만 폼을 띄운다 (SDK 가 알아서 판단한다)

@@ -15,10 +15,6 @@ export {
 
 const WEB_RESULT: ConsentResult = unavailableConsent('no-native-module');
 
-export function getAdsConsentResult(): ConsentResult | null {
-  return WEB_RESULT;
-}
-
 export function useAdsConsentResult(): ConsentResult | null {
   return WEB_RESULT;
 }

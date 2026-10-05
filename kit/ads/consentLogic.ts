@@ -71,10 +71,8 @@ function toOutcome(status: string): Exclude<ConsentOutcome, 'unavailable'> {
       return 'obtained';
     case 'NOT_REQUIRED':
       return 'not-required';
-    case 'REQUIRED':
-      return 'required';
     default:
-      // UNKNOWN 이나 알 수 없는 값은 "아직 동의를 못 받은 상태" 로 본다
+      // REQUIRED, UNKNOWN 이나 알 수 없는 값은 "아직 동의를 못 받은 상태" 로 본다
       return 'required';
   }
 }
@@ -107,15 +105,16 @@ export function shouldRetryConsent(
   attempt: number,
   maxAttempts: number
 ): boolean {
-  if (result.outcome !== 'unavailable') return false;
-  if (result.reason !== 'error') return false;
-  return attempt < maxAttempts;
+  return result.outcome === 'unavailable' && result.reason === 'error' && attempt < maxAttempts;
 }
 
-/** 재시도 간격 (지수 백오프, 상한 있음) */
-export function retryDelayMs(attempt: number, baseMs = 1000, maxMs = 8000): number {
-  const delay = baseMs * 2 ** Math.max(0, attempt - 1);
-  return Math.min(delay, maxMs);
+/**
+ * n 번째 재시도의 지연 (지수 백오프, 상한 있음). n 이 0 이하면 0.
+ * 동의 재시도(1s 시작, 상한 8s)와 보상형 광고 재시도(rewardedState 의 정책)가 같이 쓴다.
+ */
+export function backoffMs(n: number, baseMs: number, maxMs: number): number {
+  if (n <= 0) return 0;
+  return Math.min(maxMs, baseMs * 2 ** (n - 1));
 }
 
 export type DebugGeographyName = 'DISABLED' | 'EEA' | 'REGULATED_US_STATE' | 'OTHER';
@@ -127,8 +126,6 @@ export type EnsureAdsConsentOptions = {
   testDeviceIdentifiers?: string[];
   /** 미성년자 대상 태그 (릴리스에서도 적용된다) */
   tagForUnderAgeOfConsent?: boolean;
-  /** 'error' 로 실패했을 때 추가 시도 횟수 */
-  maxRetries?: number;
 };
 
 export type ResolvedConsentRequest = {

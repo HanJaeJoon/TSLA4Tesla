@@ -25,12 +25,8 @@ import {
   ChartPeriod,
   StockCountError,
 } from '../lib/calculator';
-import {
-  resolveTargetCurrency,
-  formatApproxConverted,
-  formatCurrency,
-  formatDecimal,
-} from '../kit/currency';
+import { resolveTargetCurrency, formatCurrency, formatDecimal } from '../kit/currency';
+import { formatApproxConverted } from '../lib/currency';
 import { t, appLocale, deviceCurrencyCode } from '../lib/i18n';
 import { saveInputs, loadInputs } from '../lib/preferences';
 import { useThemeColors, ThemeColors } from '../kit/theme';

@@ -1,7 +1,7 @@
 import {
+  backoffMs,
   interpretConsentInfo,
   resolveConsentRequest,
-  retryDelayMs,
   shouldRequestAds,
   shouldRetryConsent,
   unavailableConsent,
@@ -119,12 +119,17 @@ describe('shouldRetryConsent', () => {
   });
 });
 
-describe('retryDelayMs', () => {
-  it('지수로 늘어나되 상한을 넘지 않는다', () => {
-    expect(retryDelayMs(1, 1000, 8000)).toBe(1000);
-    expect(retryDelayMs(2, 1000, 8000)).toBe(2000);
-    expect(retryDelayMs(3, 1000, 8000)).toBe(4000);
-    expect(retryDelayMs(9, 1000, 8000)).toBe(8000);
+describe('backoffMs', () => {
+  it('지수로 늘어나되 상한을 넘지 않는다 (동의 재시도: 1s 시작, 상한 8s)', () => {
+    expect(backoffMs(1, 1000, 8000)).toBe(1000);
+    expect(backoffMs(2, 1000, 8000)).toBe(2000);
+    expect(backoffMs(3, 1000, 8000)).toBe(4000);
+    expect(backoffMs(9, 1000, 8000)).toBe(8000);
+  });
+
+  it('0 이하면 지연이 없다', () => {
+    expect(backoffMs(0, 1000, 8000)).toBe(0);
+    expect(backoffMs(-1, 1000, 8000)).toBe(0);
   });
 });
 

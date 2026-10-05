@@ -4,10 +4,8 @@ export function pickSupportedLocale<L extends string>(
   supportedLocales: readonly L[],
   fallback: L
 ): L {
-  for (const code of languageCodes) {
-    if (code && (supportedLocales as readonly string[]).includes(code)) {
-      return code as L;
-    }
-  }
-  return fallback;
+  const found = languageCodes.find(
+    (code) => !!code && (supportedLocales as readonly string[]).includes(code)
+  );
+  return (found as L | undefined) ?? fallback;
 }
