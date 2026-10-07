@@ -20,5 +20,19 @@ export function yAxisDecimalPlaces(values: number[], segments = 4): number {
 
   const digits = Math.ceil(-Math.log10(target) - EPSILON);
   // 기존 표기(소수 1자리)를 하한으로 유지하고, 라벨 폭이 넘치지 않게 상한을 둔다
-  return Math.min(MAX_DECIMAL_PLACES, Math.max(1, digits));
+  const clamp = (d: number) => Math.min(MAX_DECIMAL_PLACES, Math.max(1, d));
+  const base = clamp(digits);
+  if (step === 0 || labelsEvenlySpaced(min, step, segments, base)) return base;
+  // step 이 그 자릿수로 딱 떨어지지 않으면 반올림 때문에 라벨 간격이 들쭉날쭉해진다
+  // (예: 1.6, 1.7, 1.9, 2.1). 한 자리 더 늘려 반올림 오차를 step 의 1/10 이하로 줄인다.
+  return clamp(digits + 1);
+}
+
+// chart-kit 과 같은 방식(min + step * i 를 toFixed)으로 만든 라벨의 간격이 모두 같은지
+function labelsEvenlySpaced(min: number, step: number, segments: number, digits: number): boolean {
+  const scale = 10 ** digits;
+  const units = Array.from({ length: segments + 1 }, (_, i) =>
+    Math.round(Number((min + step * i).toFixed(digits)) * scale)
+  );
+  return units.every((u, i) => i === 0 || u - units[i - 1] === units[1] - units[0]);
 }
