@@ -11,6 +11,7 @@ import {
   Dimensions,
   Platform,
   RefreshControl,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
@@ -64,6 +65,7 @@ const FETCH_TIMEOUT_MS = 10000;
 
 const BRAND_RED = '#E82127';
 const BANNER_AD_UNIT_ID = 'ca-app-pub-2903995158289675/6341864832';
+const PRIVACY_POLICY_URL = 'https://jjester.tistory.com/175';
 
 // Tesla 차량 모델 및 트림 정보
 const TESLA_VEHICLES = {
@@ -678,17 +680,28 @@ export default function HomeScreen() {
           />
         </View>
       )}
-      {privacyOptionsRequired && (
+      <View style={styles.footerLinks}>
+        {privacyOptionsRequired && (
+          <TouchableOpacity
+            style={styles.privacyOptionsButton}
+            onPress={() => {
+              void showPrivacyOptions();
+            }}
+            accessibilityRole="button"
+          >
+            <Text style={styles.privacyOptionsText}>{t('privacyOptions')}</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
           style={styles.privacyOptionsButton}
           onPress={() => {
-            void showPrivacyOptions();
+            void Linking.openURL(PRIVACY_POLICY_URL);
           }}
-          accessibilityRole="button"
+          accessibilityRole="link"
         >
-          <Text style={styles.privacyOptionsText}>{t('privacyOptions')}</Text>
+          <Text style={styles.privacyOptionsText}>{t('privacyPolicy')}</Text>
         </TouchableOpacity>
-      )}
+      </View>
       <AdBanner productionUnitId={BANNER_AD_UNIT_ID} enabled={shouldRequestAds(adsConsent)} />
     </SafeAreaView>
   );
@@ -986,6 +999,11 @@ const makeStyles = (colors: ThemeColors) =>
     legendText: {
       fontSize: 12,
       color: colors.subtext,
+    },
+    footerLinks: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 16,
     },
     privacyOptionsButton: {
       alignItems: 'center',
