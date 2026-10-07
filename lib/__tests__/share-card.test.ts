@@ -1,18 +1,16 @@
 import { shareFileName, silhouetteFor } from '../share-card';
 
 describe('silhouetteFor', () => {
-  it('Cybertruck은 픽업 실루엣을 사용한다', () => {
-    expect(silhouetteFor('Cybertruck')).toBe('pickup');
+  it('모델마다 전용 실루엣을 사용한다', () => {
+    expect(silhouetteFor('Model 3')).toBe('model3');
+    expect(silhouetteFor('Model Y')).toBe('modelY');
+    expect(silhouetteFor('Model S')).toBe('modelS');
+    expect(silhouetteFor('Model X')).toBe('modelX');
+    expect(silhouetteFor('Cybertruck')).toBe('cybertruck');
   });
 
-  it('Model Y/X는 SUV 실루엣을 사용한다', () => {
-    expect(silhouetteFor('Model Y')).toBe('suv');
-    expect(silhouetteFor('Model X')).toBe('suv');
-  });
-
-  it('그 외 모델은 세단 실루엣을 사용한다', () => {
-    expect(silhouetteFor('Model 3')).toBe('sedan');
-    expect(silhouetteFor('Model S')).toBe('sedan');
+  it('모르는 모델은 Model 3 실루엣으로 대신한다', () => {
+    expect(silhouetteFor('Roadster')).toBe('model3');
   });
 });
 
