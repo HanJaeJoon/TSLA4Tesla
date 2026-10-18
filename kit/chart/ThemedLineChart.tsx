@@ -41,7 +41,7 @@ export function ThemedLineChart(props: {
   hideFill?: boolean;
 }) {
   const { colors, brandColor, locale } = props;
-  assertLegendLength(props.legend, props.extraSeries);
+  assertLegendLength(props.legend, props.extraSeries?.length ?? 0);
   // chart-kit 은 Y축 min/max 를 전 계열 합집합으로 잡는다. 주 계열만 보면
   // 주 계열 범위가 거칠고 실제 축 범위가 작을 때 라벨이 전부 0.0 으로 뭉개진다.
   const allValues = [

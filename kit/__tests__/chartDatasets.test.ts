@@ -64,18 +64,18 @@ describe('hexToRgba', () => {
 
 describe('assertLegendLength', () => {
   it('legend가 없거나 dataset 수 이하면 통과한다', () => {
-    expect(() => assertLegendLength(undefined)).not.toThrow();
-    expect(() => assertLegendLength([])).not.toThrow();
-    expect(() => assertLegendLength(['주'])).not.toThrow();
-    expect(() => assertLegendLength(['주', '추가'], [{ values: [1], color: '#00AA00' }])).not.toThrow();
+    expect(() => assertLegendLength(undefined, 0)).not.toThrow();
+    expect(() => assertLegendLength([], 0)).not.toThrow();
+    expect(() => assertLegendLength(['주'], 0)).not.toThrow();
+    expect(() => assertLegendLength(['주', '추가'], 1)).not.toThrow();
   });
 
   it('legend가 dataset 수보다 길면 throw한다', () => {
-    expect(() => assertLegendLength(['a', 'b'])).toThrow(
+    expect(() => assertLegendLength(['a', 'b'], 0)).toThrow(
       'ThemedLineChart: legend length exceeds dataset count'
     );
-    expect(() =>
-      assertLegendLength(['a', 'b', 'c'], [{ values: [1], color: '#00AA00' }])
-    ).toThrow('ThemedLineChart: legend length exceeds dataset count');
+    expect(() => assertLegendLength(['a', 'b', 'c'], 1)).toThrow(
+      'ThemedLineChart: legend length exceeds dataset count'
+    );
   });
 });

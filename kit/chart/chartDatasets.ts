@@ -44,9 +44,9 @@ export function buildChartDatasets(
  */
 export function assertLegendLength(
   legend: string[] | undefined,
-  extraSeries?: ChartSeries[]
+  extraSeriesLength: number
 ): void {
-  const datasetCount = 1 + (extraSeries?.length ?? 0);
+  const datasetCount = 1 + extraSeriesLength;
   if (legend != null && legend.length > datasetCount) {
     throw new Error('ThemedLineChart: legend length exceeds dataset count');
   }

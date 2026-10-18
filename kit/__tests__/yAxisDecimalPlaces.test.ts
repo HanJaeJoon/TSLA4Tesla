@@ -3,14 +3,14 @@ import { yAxisDecimalPlaces } from '../chart/yAxisDecimalPlaces';
 
 describe('yAxisDecimalPlaces', () => {
   it('값 범위가 충분히 크면 기존 표기(소수 1자리)를 유지한다', () => {
-    // 주식 100주 규모: 구매 가능 대수 20~30대, step 2.5
+    // 값 20~30대, step 2.5
     expect(yAxisDecimalPlaces([20, 24, 30])).toBe(1);
     // step이 정확히 0.1이어도 1자리로 구별된다
     expect(yAxisDecimalPlaces([1.0, 1.2, 1.4])).toBe(1);
   });
 
   it('값 범위가 작으면 라벨이 구별되도록 자릿수를 늘린다', () => {
-    // 주식 1주 규모: 구매 가능 대수 0.006~0.012대, step 0.003 -> 3자리
+    // 값 0.006~0.018대, step 0.003 -> 3자리
     expect(yAxisDecimalPlaces([0.006, 0.009, 0.012, 0.018])).toBe(3);
     // step 0.0015 는 3자리로 반올림하면 간격이 고르지 않아 4자리
     expect(yAxisDecimalPlaces([0.006, 0.009, 0.012])).toBe(4);
@@ -21,7 +21,7 @@ describe('yAxisDecimalPlaces', () => {
   });
 
   it('step 이 자릿수로 딱 떨어지지 않아 라벨 간격이 들쭉날쭉하면 한 자리 늘린다', () => {
-    // 실기기 1Y 추이: 1.65~2.33대, step 0.17 -> 1자리면 1.6/1.8/2.0/2.2/2.3 처럼 간격이 달라진다
+    // 값 1.65~2.33대, step 0.17 -> 1자리면 1.6/1.8/2.0/2.2/2.3 처럼 간격이 달라진다
     const values = [1.65, 2.0, 2.33];
     const digits = yAxisDecimalPlaces(values);
     expect(digits).toBe(2);
