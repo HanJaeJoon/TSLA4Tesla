@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Circle, Path, Text as SvgText } from 'react-native-svg';
 import { silhouetteFor, type SilhouetteKind } from '../lib/share-card';
 import { BrandCard } from '../kit/share/BrandCard';
 
@@ -22,6 +22,8 @@ const SILHOUETTES: Record<
     wheelY: number;
     wheelR: number;
     rimR: number;
+    /** 문 위에 찍는 모델 글자. 3/S, Y/X 옆모습이 220x80 에서는 거의 같아 글자로 구분한다. */
+    badge: string;
   }
 > = {
   model3: {
@@ -34,6 +36,7 @@ const SILHOUETTES: Record<
     wheelY: 62.6,
     wheelR: 14.4,
     rimR: 9.9,
+    badge: '3',
   },
   modelY: {
     body: 'M18.7 66.7 C16.6 66 13.9 65.6 12.3 64.5 C10.6 63.5 9.6 61.8 8.9 60.3 C8.1 58.8 8 57.1 8 55.5 C8 54 7.9 52.4 8.9 50.8 C9.8 49.2 11.6 47.4 13.6 46.1 C15.6 44.8 17.9 44 20.9 43.1 C23.8 42.1 26.2 41.5 31.2 40.3 C36.2 39.1 44.9 37.6 50.9 36 C56.9 34.4 61.8 32.6 67.3 30.8 C78.3 23.8 90.9 13.7 100.3 9.8 C109.8 5.9 115.3 7.4 123.9 7.3 C132.5 7.1 142.9 7.5 151.8 8.7 C160.8 10 170.2 12.4 177.6 14.7 C185 17 191.4 20.8 196.1 22.5 C200.7 24.2 203.2 24 205.5 24.8 C207.8 25.7 208.8 26.4 209.8 27.6 C210.8 28.9 211.2 30.2 211.5 32.3 C211.9 34.5 212 37.4 212 40.5 C212 43.7 211.7 48.2 211.3 51.2 C210.9 54.2 210.3 56.6 209.4 58.5 C208.4 60.5 207.1 61.8 205.5 62.8 C203.9 63.9 201.8 64.1 199.9 64.8 L185.3 69.5 A17.4 17.4 0 1 0 154.1 69.5 L61.2 69.5 A17.4 17.4 0 1 0 30 69.5 Z',
@@ -45,6 +48,7 @@ const SILHOUETTES: Record<
     wheelY: 61.7,
     wheelR: 15.3,
     rimR: 10.4,
+    badge: 'Y',
   },
   modelS: {
     body: 'M17.9 69.2 C15.7 68.8 12.9 68.6 11.3 67.9 C9.7 67.2 9 65.9 8.4 64.9 C7.9 63.9 7.8 62.9 8 61.8 C8.2 60.7 8.5 59.4 9.8 58.1 C11.1 56.8 12 55.7 15.8 54 C19.6 52.3 26.4 49.9 32.6 48.1 C38.9 46.3 46.3 44.8 53.2 43.3 C60 41.7 66.8 40.2 73.7 38.6 C84.6 32.3 98.3 23 106.5 19.5 C114.7 16 116.6 17.7 122.9 17.7 C129.3 17.6 136.8 17.8 144.7 19.2 C152.6 20.6 162.1 23.6 170.1 25.9 C178.1 28.2 186.8 31.6 192.7 33.1 C198.6 34.6 201.2 34.4 205.4 35.1 C206.8 35.7 208.5 36 209.5 37 C210.6 38 211.2 39 211.6 40.9 C212 42.8 212.1 45.8 212 48.3 C211.9 50.7 211.7 53.5 211.2 55.7 C210.7 57.8 210.1 59.8 209.1 61.4 C208.2 63 206.9 64.5 205.4 65.5 C203.9 66.5 201.9 66.7 200.1 67.4 L181.2 71.9 A16.3 16.3 0 1 0 154.5 71.9 L59.7 71.9 A16.3 16.3 0 1 0 33 71.9 Z',
@@ -56,6 +60,7 @@ const SILHOUETTES: Record<
     wheelY: 62.6,
     wheelR: 14.4,
     rimR: 9.9,
+    badge: 'S',
   },
   modelX: {
     body: 'M18.5 67.3 C16.5 66.7 14 66.5 12.4 65.5 C10.9 64.5 9.7 62.8 9 61.3 C8.3 59.7 8 57.7 8 56 C8 54.3 8 52.8 9 51.2 C10 49.6 11.9 47.6 14.1 46.3 C16.2 45.1 19 44.5 22.1 43.7 C25.3 42.9 28 42.6 33 41.5 C38.1 40.4 46.9 38.7 52.4 37.3 C57.8 35.9 61.2 34.4 65.7 33 C73.4 28.3 80.5 22.6 88.7 18.9 C96.9 15.2 106.8 12.3 114.9 10.6 C123 9 129.4 9.2 137.1 9.2 C144.8 9.3 153.6 9.8 161.3 11 C169 12.3 177.1 14.7 183.5 16.9 C189.9 19.1 195.9 22.5 199.6 24.2 C203.3 25.8 204 25.6 205.7 26.6 C207.3 27.5 208.7 28.5 209.7 29.8 C210.7 31.1 211.1 32.5 211.5 34.6 C211.9 36.8 212 39.7 212 42.7 C212 45.7 211.8 50 211.3 52.8 C210.9 55.6 210.2 57.8 209.3 59.7 C208.4 61.5 207.1 62.9 205.7 63.9 C204.2 64.9 202.2 65 200.4 65.5 L181.1 70.3 A16.9 16.9 0 1 0 151.5 70.3 L61.5 70.3 A16.9 16.9 0 1 0 31.9 70.3 Z',
@@ -67,6 +72,7 @@ const SILHOUETTES: Record<
     wheelY: 62.1,
     wheelR: 14.9,
     rimR: 10.2,
+    badge: 'X',
   },
   cybertruck: {
     body: 'M11.2 61.2 L8 39.7 L103.1 12.7 L212 35.7 L211.4 58.3 L207.6 61.2 L198.5 62.6 L197 52.3 L189 43 L169.3 43 L161.2 52.3 L159.8 62.6 L61.8 62.6 L60.4 52.3 L52.3 43 L32.6 43 L24.5 52.3 L23.1 62.6 Z',
@@ -78,6 +84,7 @@ const SILHOUETTES: Record<
     wheelY: 61.2,
     wheelR: 15.8,
     rimR: 9.1,
+    badge: 'CT',
   },
 };
 
@@ -85,7 +92,7 @@ const SILHOUETTES: Record<
 const BODY_SOLID = '#FDEDEE';
 
 function VehicleSilhouette({ vehicle }: { vehicle: string }) {
-  const { body, windows, pillars, mirror, seams, wheels, wheelY, wheelR, rimR } =
+  const { body, windows, pillars, mirror, seams, wheels, wheelY, wheelR, rimR, badge } =
     SILHOUETTES[silhouetteFor(vehicle)];
   return (
     <Svg width={220} height={80} viewBox="0 0 220 80">
@@ -107,6 +114,10 @@ function VehicleSilhouette({ vehicle }: { vehicle: string }) {
           <Circle cx={cx} cy={wheelY} r={rimR * 0.32} fill={BODY_SOLID} />
         </React.Fragment>
       ))}
+      <Circle cx={112} cy={49} r={9} fill={BRAND_RED} />
+      <SvgText x={112} y={53.2} fontSize={12} fontWeight="bold" fill="#fff" textAnchor="middle">
+        {badge}
+      </SvgText>
     </Svg>
   );
 }
