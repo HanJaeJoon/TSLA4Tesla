@@ -42,4 +42,15 @@ describe('createPrefs', () => {
     await prefs.save({ name: 'a', count: 1 });
     expect(await other.load()).toBeNull();
   });
+
+  it('remove 에 성공하면 true를 반환하고 값이 사라진다', async () => {
+    await prefs.save({ name: 'a', count: 1 });
+    expect(await prefs.remove()).toBe(true);
+    expect(await prefs.load()).toBeNull();
+  });
+
+  it('removeItem 이 실패하면 예외 없이 false를 반환한다', async () => {
+    jest.spyOn(AsyncStorage, 'removeItem').mockRejectedValueOnce(new Error('fail'));
+    expect(await prefs.remove()).toBe(false);
+  });
 });
