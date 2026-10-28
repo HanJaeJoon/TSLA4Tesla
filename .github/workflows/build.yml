@@ -14,7 +14,19 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
+      # ubuntu-latest 여유 공간이 부족해 packageReleaseBundle 에서 "No space left on device" 로 죽을 수 있다
+      # (2026-10-27 loan-calculator run 40500328410). 같은 방식으로 이 빌드가 쓰지 않는 프리인스톨 도구를 지운다.
+      - name: Free disk space
+        run: |
+          df -h / | tail -1
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/share/swift /usr/local/share/boost \
+            /opt/hostedtoolcache/CodeQL /usr/local/share/powershell /usr/lib/jvm/temurin-8-jdk-amd64 \
+            /usr/lib/jvm/temurin-11-jdk-amd64 2>/dev/null || true
+          sudo docker image prune -af >/dev/null 2>&1 || true
+          df -h / | tail -1
+
       - uses: actions/checkout@v4
         with:
           # versionCode 가드가 vc* 태그를 읽어야 하므로 전체 이력을 가져온다
