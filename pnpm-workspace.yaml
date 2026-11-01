@@ -20,7 +20,7 @@ overrides:
   # 메이저별 선택자로 각각 패치 버전만 올린다.
   '@xmldom/xmldom@0.8': '>=0.8.15 <0.9'
   '@xmldom/xmldom@0.9': '>=0.9.12 <1'
-  # Dependabot 공개 알림 (2026-10 canary). braces/node-forge: 수정 버전 미출시(취약 범위에 포함, override할 패치 없음).
+  # Dependabot 공개 알림 (2026-10 canary). braces: 수정 버전 미출시(취약 범위에 포함, override할 패치 없음).
   # image-size: 1.2.1(metro) 를 2.0.4 파서로. 2.x 는 경로 인자를 받지 않아 metro Assets.js 가 깨지므로
   # vendor/image-size 래퍼(경로면 readFileSync)로 바꾼다. 실제 파서는 @image-size/core(=npm image-size@2.0.4).
   # 패치(2.0.3+)는 2026-09-15(KST) npm 출시.
@@ -35,3 +35,6 @@ overrides:
   shell-quote: '>=1.11.0'
   source-map-js: '>=1.2.2'
   compression: '>=1.8.2'
+  # Dependabot 2026-11-01: node-forge high(<= 1.4.0, 1.4.2 출시), zod high(< 4.6.6). zod 3.x 사본은 4 로 못 올려 4.x 만.
+  node-forge: '>=1.4.2'
+  'zod@4': 4.6.6
