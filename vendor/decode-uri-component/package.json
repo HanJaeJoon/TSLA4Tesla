@@ -1,0 +1,11 @@
+{
+  "name": "decode-uri-component",
+  "version": "0.5.1",
+  "private": true,
+  "description": "CommonJS wrapper around ESM-only decode-uri-component 0.5.1 (query-string 7 calls the require() result).",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@decode-uri-component/esm": "npm:decode-uri-component@0.5.1"
+  }
+}

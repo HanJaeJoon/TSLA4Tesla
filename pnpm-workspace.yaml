@@ -16,7 +16,9 @@ overrides:
   postcss: '>=8.5.23 <9'
   xcode>uuid: ^11.1.1
   # Dependabot 2026-11-01: decode-uri-component high(<= 0.5.0).
-  decode-uri-component: '>=0.5.1'
+  # 0.4+는 ESM 전용인데 query-string 7이 require 결과를 함수로 부르므로 CJS 래퍼(vendor/decode-uri-component)로 바꾼다.
+  # 실제 구현은 @decode-uri-component/esm(=npm decode-uri-component@0.5.1).
+  decode-uri-component: file:./vendor/decode-uri-component
   # xmldom 은 0.8 계열(plist)과 0.9 계열이 함께 쓰여 API 가 달라 한 메이저로 통일할 수 없다.
   # 메이저별 선택자로 각각 패치 버전만 올린다.
   '@xmldom/xmldom@0.8': '>=0.8.15 <0.9'
