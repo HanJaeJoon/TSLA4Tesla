@@ -37,5 +37,6 @@ overrides:
   source-map-js: '>=1.2.2'
   compression: '>=1.8.2'
   # Dependabot 2026-11-01: node-forge high(<= 1.4.0, 1.4.2 출시), zod high(< 4.6.6). zod 3.x 사본은 4 로 못 올려 4.x 만.
-  node-forge: '>=1.4.2'
+  # Dependabot 2026-11-24: node-forge medium(<= 1.4.2). 1.4.4는 출시 하루째라 1.4.3으로 고정.
+  node-forge: 1.4.3
   'zod@4': 4.6.6
